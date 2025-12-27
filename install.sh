@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Flare Download - Multi-Platform Video Downloader
-# Robust Installation Script
+# ============================================================================
+# FLARE DOWNLOAD - Robust Installation Script
 # Part of the Flare ecosystem
+# ============================================================================
+# This installer is designed to work for complete beginners.
+# It handles all dependencies automatically with clear error messages.
+# ============================================================================
 
 set -e
 
@@ -12,10 +16,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 ORANGE='\033[0;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
+DIM='\033[2m'
 
 # Banner
+clear
 echo ""
 echo -e "${RED}${BOLD}"
 echo "  ███████╗██╗      █████╗ ██████╗ ███████╗"
@@ -25,10 +32,12 @@ echo "  ██╔══╝  ██║     ██╔══██║██╔═�
 echo "  ██║     ███████╗██║  ██║██║  ██║███████╗"
 echo "  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝"
 echo -e "${NC}"
-echo -e "${ORANGE}${BOLD}DOWNLOAD${NC} - Multi-Platform Video Downloader"
-echo -e "${YELLOW}YouTube | TikTok | Instagram | Twitter | 1000+ sites${NC}"
+echo -e "${ORANGE}${BOLD}  DOWNLOAD${NC} ${DIM}v2.6.0${NC}"
 echo ""
-echo "=================================================="
+echo -e "  ${CYAN}Premium Multi-Platform Video Downloader${NC}"
+echo -e "  ${DIM}YouTube • TikTok • Instagram • Twitter • 1000+ sites${NC}"
+echo ""
+echo -e "${DIM}══════════════════════════════════════════════════════${NC}"
 echo ""
 
 # Determine install directory
@@ -40,139 +49,185 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-# Function to check command existence
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
 check_command() {
-    if command -v "$1" &> /dev/null; then
-        return 0
-    else
-        return 1
-    fi
+    command -v "$1" &> /dev/null
 }
 
-# Function to print status
-print_status() {
-    echo -e "${GREEN}[✓]${NC} $1"
+print_step() {
+    echo -e "${ORANGE}[$1/7]${NC} ${BOLD}$2${NC}"
 }
 
-print_error() {
-    echo -e "${RED}[✗]${NC} $1"
+print_ok() {
+    echo -e "  ${GREEN}✓${NC} $1"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[!]${NC} $1"
+print_fail() {
+    echo -e "  ${RED}✗${NC} $1"
+}
+
+print_warn() {
+    echo -e "  ${YELLOW}!${NC} $1"
 }
 
 print_info() {
-    echo -e "${BLUE}[*]${NC} $1"
+    echo -e "  ${BLUE}→${NC} $1"
 }
 
-# Step 1: Check Python
-echo -e "${ORANGE}[1/6]${NC} Checking Python installation..."
-
-if check_command python3; then
-    PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-    print_status "Python $PYTHON_VERSION found"
-
-    # Check version
-    PYTHON_MAJOR=$(python3 -c 'import sys; print(sys.version_info.major)')
-    PYTHON_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
-
-    if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 8 ]); then
-        print_error "Python 3.8 or higher is required (found $PYTHON_VERSION)"
-        echo ""
-        echo "Please upgrade Python:"
-        echo "  Ubuntu/Debian: sudo apt install python3.10"
-        echo "  macOS: brew install python@3.10"
-        exit 1
-    fi
-else
-    print_error "Python 3 is not installed!"
+print_error_box() {
     echo ""
-    echo "Please install Python 3.8+:"
-    echo "  Ubuntu/Debian: sudo apt install python3 python3-pip python3-venv"
-    echo "  macOS: brew install python3"
+    echo -e "${RED}╔════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║${NC} ${BOLD}ERROR: $1${NC}"
+    echo -e "${RED}╠════════════════════════════════════════════════════════╣${NC}"
+    shift
+    for line in "$@"; do
+        echo -e "${RED}║${NC} $line"
+    done
+    echo -e "${RED}╚════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# ============================================================================
+# STEP 1: Check Python
+# ============================================================================
+echo ""
+print_step "1" "Checking Python installation..."
+
+PYTHON_CMD=""
+for cmd in python3 python; do
+    if check_command "$cmd"; then
+        ver=$($cmd -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)
+        major=$($cmd -c 'import sys; print(sys.version_info.major)' 2>/dev/null)
+        minor=$($cmd -c 'import sys; print(sys.version_info.minor)' 2>/dev/null)
+
+        if [ "$major" -ge 3 ] && [ "$minor" -ge 8 ]; then
+            PYTHON_CMD="$cmd"
+            print_ok "Python $ver found ($cmd)"
+            break
+        fi
+    fi
+done
+
+if [ -z "$PYTHON_CMD" ]; then
+    print_error_box "Python 3.8+ is required" \
+        "" \
+        "Install Python 3.8 or higher:" \
+        "  Ubuntu/Debian:  sudo apt install python3 python3-pip python3-venv" \
+        "  Fedora:         sudo dnf install python3 python3-pip" \
+        "  macOS:          brew install python@3.11" \
+        "  Arch:           sudo pacman -S python python-pip"
     exit 1
 fi
 
-# Step 2: Check pip
+# ============================================================================
+# STEP 2: Check pip
+# ============================================================================
 echo ""
-echo -e "${ORANGE}[2/6]${NC} Checking pip..."
+print_step "2" "Checking pip..."
 
-if python3 -m pip --version &> /dev/null; then
-    PIP_VERSION=$(python3 -m pip --version | awk '{print $2}')
-    print_status "pip $PIP_VERSION found"
+if $PYTHON_CMD -m pip --version &> /dev/null; then
+    PIP_VER=$($PYTHON_CMD -m pip --version | awk '{print $2}')
+    print_ok "pip $PIP_VER found"
 else
-    print_warning "pip not found, attempting to install..."
+    print_warn "pip not found, attempting to install..."
+
     if check_command apt; then
-        sudo apt install -y python3-pip
+        sudo apt update && sudo apt install -y python3-pip
+    elif check_command dnf; then
+        sudo dnf install -y python3-pip
+    elif check_command pacman; then
+        sudo pacman -S --noconfirm python-pip
     elif check_command brew; then
-        brew install pip3
+        # pip comes with brew python
+        :
     else
-        print_error "Could not install pip. Please install manually."
+        print_error_box "Could not install pip" \
+            "" \
+            "Please install pip manually:" \
+            "  Ubuntu/Debian:  sudo apt install python3-pip" \
+            "  Fedora:         sudo dnf install python3-pip" \
+            "  macOS:          brew install python"
+        exit 1
+    fi
+
+    if $PYTHON_CMD -m pip --version &> /dev/null; then
+        print_ok "pip installed successfully"
+    else
+        print_error_box "pip installation failed" \
+            "Please install pip manually and try again"
         exit 1
     fi
 fi
 
-# Step 3: Check/Install tkinter (system dependency)
+# ============================================================================
+# STEP 3: Check tkinter (system dependency)
+# ============================================================================
 echo ""
-echo -e "${ORANGE}[3/6]${NC} Checking system dependencies..."
+print_step "3" "Checking tkinter (GUI library)..."
 
-# Check if tkinter is available
-if python3 -c "import tkinter" 2>/dev/null; then
-    print_status "tkinter found"
+if $PYTHON_CMD -c "import tkinter" 2>/dev/null; then
+    print_ok "tkinter found"
 else
-    print_warning "tkinter not found, attempting to install..."
+    print_warn "tkinter not found, attempting to install..."
 
-    # Detect OS and install
     if [ -f /etc/debian_version ]; then
-        # Debian/Ubuntu
-        print_info "Detected Debian/Ubuntu, installing python3-tk..."
+        print_info "Detected Debian/Ubuntu..."
         sudo apt update && sudo apt install -y python3-tk
     elif [ -f /etc/redhat-release ]; then
-        # RHEL/CentOS/Fedora
-        print_info "Detected RHEL/Fedora, installing python3-tkinter..."
+        print_info "Detected RHEL/Fedora..."
         sudo dnf install -y python3-tkinter 2>/dev/null || sudo yum install -y python3-tkinter
     elif [ -f /etc/arch-release ]; then
-        # Arch Linux
-        print_info "Detected Arch Linux, installing tk..."
+        print_info "Detected Arch Linux..."
         sudo pacman -S --noconfirm tk
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        print_info "Detected macOS, installing python-tk..."
-        brew install python-tk@3.12 || brew install python-tk
+        print_info "Detected macOS..."
+        brew install python-tk@3.12 2>/dev/null || brew install python-tk 2>/dev/null || brew install tcl-tk
     else
-        print_error "Could not auto-install tkinter. Please install manually:"
-        echo "  Ubuntu/Debian: sudo apt install python3-tk"
-        echo "  Fedora: sudo dnf install python3-tkinter"
-        echo "  Arch: sudo pacman -S tk"
-        echo "  macOS: brew install python-tk"
+        print_error_box "Could not install tkinter" \
+            "" \
+            "Please install tkinter manually:" \
+            "  Ubuntu/Debian:  sudo apt install python3-tk" \
+            "  Fedora:         sudo dnf install python3-tkinter" \
+            "  Arch:           sudo pacman -S tk" \
+            "  macOS:          brew install python-tk"
         exit 1
     fi
 
-    # Verify installation
-    if python3 -c "import tkinter" 2>/dev/null; then
-        print_status "tkinter installed successfully"
+    if $PYTHON_CMD -c "import tkinter" 2>/dev/null; then
+        print_ok "tkinter installed successfully"
     else
-        print_error "tkinter installation failed. Please install manually."
+        print_error_box "tkinter installation failed" \
+            "" \
+            "Please install tkinter manually and try again"
         exit 1
     fi
 fi
 
-# Check FFmpeg (optional but recommended)
+# ============================================================================
+# STEP 4: Check FFmpeg (optional)
+# ============================================================================
+echo ""
+print_step "4" "Checking FFmpeg (optional)..."
+
 if check_command ffmpeg; then
-    FFMPEG_VERSION=$(ffmpeg -version 2>&1 | head -n1 | awk '{print $3}')
-    print_status "FFmpeg $FFMPEG_VERSION found (optional, for video merging)"
+    FFMPEG_VER=$(ffmpeg -version 2>&1 | head -n1 | awk '{print $3}')
+    print_ok "FFmpeg $FFMPEG_VER found"
 else
-    print_warning "FFmpeg not found (optional, recommended for video merging)"
+    print_warn "FFmpeg not found (optional, for video merging)"
     print_info "To install: sudo apt install ffmpeg (Linux) or brew install ffmpeg (macOS)"
 fi
 
-# Step 4: Create installation directory
+# ============================================================================
+# STEP 5: Create installation directory
+# ============================================================================
 echo ""
-echo -e "${ORANGE}[4/6]${NC} Setting up installation directory..."
+print_step "5" "Setting up installation directory..."
 
 mkdir -p "$INSTALL_DIR"
-print_status "Created: $INSTALL_DIR"
+print_ok "Created: $INSTALL_DIR"
 
 # Copy or download files
 if [ -f "$SCRIPT_DIR/youtube_downloader.py" ]; then
@@ -181,37 +236,42 @@ if [ -f "$SCRIPT_DIR/youtube_downloader.py" ]; then
     cp "$SCRIPT_DIR/version.py" "$INSTALL_DIR/" 2>/dev/null || true
     cp "$SCRIPT_DIR/requirements.txt" "$INSTALL_DIR/"
     cp "$SCRIPT_DIR/README.md" "$INSTALL_DIR/" 2>/dev/null || true
-    print_status "Application files copied"
+    print_ok "Application files copied"
 else
     print_info "Downloading from GitHub..."
     GITHUB_RAW="https://raw.githubusercontent.com/contactmukundthiru-cyber/Multi-Platform-Downloader/main"
 
     if check_command curl; then
-        curl -sSL "$GITHUB_RAW/youtube_downloader.py" -o "$INSTALL_DIR/youtube_downloader.py"
-        curl -sSL "$GITHUB_RAW/updater.py" -o "$INSTALL_DIR/updater.py"
-        curl -sSL "$GITHUB_RAW/version.py" -o "$INSTALL_DIR/version.py"
-        curl -sSL "$GITHUB_RAW/requirements.txt" -o "$INSTALL_DIR/requirements.txt"
+        curl -sSL "$GITHUB_RAW/youtube_downloader.py" -o "$INSTALL_DIR/youtube_downloader.py" || exit 1
+        curl -sSL "$GITHUB_RAW/updater.py" -o "$INSTALL_DIR/updater.py" 2>/dev/null || true
+        curl -sSL "$GITHUB_RAW/version.py" -o "$INSTALL_DIR/version.py" 2>/dev/null || true
+        curl -sSL "$GITHUB_RAW/requirements.txt" -o "$INSTALL_DIR/requirements.txt" || exit 1
     elif check_command wget; then
-        wget -q "$GITHUB_RAW/youtube_downloader.py" -O "$INSTALL_DIR/youtube_downloader.py"
-        wget -q "$GITHUB_RAW/updater.py" -O "$INSTALL_DIR/updater.py"
-        wget -q "$GITHUB_RAW/version.py" -O "$INSTALL_DIR/version.py"
-        wget -q "$GITHUB_RAW/requirements.txt" -O "$INSTALL_DIR/requirements.txt"
+        wget -q "$GITHUB_RAW/youtube_downloader.py" -O "$INSTALL_DIR/youtube_downloader.py" || exit 1
+        wget -q "$GITHUB_RAW/updater.py" -O "$INSTALL_DIR/updater.py" 2>/dev/null || true
+        wget -q "$GITHUB_RAW/version.py" -O "$INSTALL_DIR/version.py" 2>/dev/null || true
+        wget -q "$GITHUB_RAW/requirements.txt" -O "$INSTALL_DIR/requirements.txt" || exit 1
     else
-        print_error "Neither curl nor wget found. Please install one."
+        print_error_box "Neither curl nor wget found" \
+            "Please install curl or wget and try again"
         exit 1
     fi
-    print_status "Files downloaded"
+    print_ok "Files downloaded from GitHub"
 fi
 
-# Step 5: Create virtual environment and install dependencies
+# ============================================================================
+# STEP 6: Create virtual environment and install dependencies
+# ============================================================================
 echo ""
-echo -e "${ORANGE}[5/6]${NC} Setting up Python environment..."
+print_step "6" "Setting up Python environment..."
 
 # Check for venv module
-if ! python3 -m venv --help &> /dev/null; then
-    print_warning "venv module not found, installing..."
+if ! $PYTHON_CMD -m venv --help &> /dev/null; then
+    print_warn "venv module not found, installing..."
     if [ -f /etc/debian_version ]; then
         sudo apt install -y python3-venv
+    elif [ -f /etc/redhat-release ]; then
+        sudo dnf install -y python3-venv 2>/dev/null || true
     fi
 fi
 
@@ -222,27 +282,38 @@ if [ -d "$INSTALL_DIR/venv" ]; then
 fi
 
 # Create new venv
-python3 -m venv "$INSTALL_DIR/venv"
+print_info "Creating virtual environment..."
+$PYTHON_CMD -m venv "$INSTALL_DIR/venv"
+
+# Activate and install
+print_info "Installing dependencies..."
 source "$INSTALL_DIR/venv/bin/activate"
 
-print_info "Upgrading pip..."
-pip install --upgrade pip -q
+pip install --upgrade pip -q 2>/dev/null
 
-print_info "Installing dependencies..."
-pip install -r "$INSTALL_DIR/requirements.txt" -q
+# Install from requirements or individually
+if [ -f "$INSTALL_DIR/requirements.txt" ]; then
+    pip install -r "$INSTALL_DIR/requirements.txt" -q 2>/dev/null || {
+        print_warn "Some packages failed, installing individually..."
+        pip install customtkinter -q
+    }
+fi
 
-print_info "Installing yt-dlp..."
-pip install yt-dlp -q
+# Always ensure these are installed
+pip install customtkinter yt-dlp -q 2>/dev/null
 
-print_status "All dependencies installed"
+print_ok "All dependencies installed"
 
-# Step 6: Create launcher and shortcuts
+# ============================================================================
+# STEP 7: Create launcher and shortcuts
+# ============================================================================
 echo ""
-echo -e "${ORANGE}[6/6]${NC} Creating launcher..."
+print_step "7" "Creating launcher and shortcuts..."
 
 # Create launcher script
 cat > "$INSTALL_DIR/flare-download" << 'LAUNCHER'
 #!/bin/bash
+# Flare Download Launcher
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 source venv/bin/activate
@@ -250,19 +321,19 @@ python3 youtube_downloader.py "$@"
 LAUNCHER
 
 chmod +x "$INSTALL_DIR/flare-download"
-print_status "Launcher created"
+print_ok "Launcher created"
 
 # Create symlink in ~/.local/bin
 mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/flare-download" "$HOME/.local/bin/flare-download"
-print_status "Symlink created in ~/.local/bin"
+print_ok "Command 'flare-download' added to ~/.local/bin"
 
-# Create desktop entry
+# Create desktop entry (Linux)
 if [ -d "$HOME/.local/share/applications" ]; then
     cat > "$HOME/.local/share/applications/flare-download.desktop" << EOF
 [Desktop Entry]
 Name=Flare Download
-Comment=Multi-Platform Video Downloader - Part of Flare
+Comment=Premium Multi-Platform Video Downloader
 Exec=$INSTALL_DIR/flare-download
 Icon=video-x-generic
 Terminal=false
@@ -270,35 +341,42 @@ Type=Application
 Categories=Network;AudioVideo;
 Keywords=youtube;tiktok;instagram;video;download;flare;
 EOF
-    print_status "Desktop entry created"
+    print_ok "Desktop entry created"
 fi
 
 # Create desktop shortcut
 if [ -d "$HOME/Desktop" ]; then
     cp "$HOME/.local/share/applications/flare-download.desktop" "$HOME/Desktop/" 2>/dev/null || true
     chmod +x "$HOME/Desktop/flare-download.desktop" 2>/dev/null || true
-    print_status "Desktop shortcut created"
+    print_ok "Desktop shortcut created"
 fi
 
-# Installation complete
+# ============================================================================
+# DONE
+# ============================================================================
 echo ""
-echo "=================================================="
+echo -e "${DIM}══════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
+echo -e "${GREEN}${BOLD}  ✓ Installation Complete!${NC}"
 echo ""
-echo -e "To run Flare Download:"
-echo -e "  ${ORANGE}flare-download${NC}                      (if ~/.local/bin is in PATH)"
-echo -e "  ${ORANGE}$INSTALL_DIR/flare-download${NC}"
+echo -e "  ${BOLD}To run Flare Download:${NC}"
 echo ""
 
 # Check if ~/.local/bin is in PATH
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    echo -e "${YELLOW}Note:${NC} Add ~/.local/bin to your PATH for the 'flare-download' command:"
-    echo '  echo '\''export PATH="$HOME/.local/bin:$PATH"'\'' >> ~/.bashrc'
+if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+    echo -e "    ${ORANGE}flare-download${NC}"
+else
+    echo -e "    ${ORANGE}$INSTALL_DIR/flare-download${NC}"
     echo ""
+    echo -e "  ${YELLOW}Tip:${NC} Add ~/.local/bin to your PATH:"
+    echo -e "    ${DIM}echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc${NC}"
+    echo -e "    ${DIM}source ~/.bashrc${NC}"
 fi
 
-echo -e "Or find ${BOLD}Flare Download${NC} in your applications menu."
 echo ""
-echo -e "${RED}Part of the Flare ecosystem${NC}"
+echo -e "  Or find ${BOLD}Flare Download${NC} in your applications menu."
+echo ""
+echo -e "${DIM}══════════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "  ${RED}Part of the Flare ecosystem${NC}"
 echo ""

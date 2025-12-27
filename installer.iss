@@ -16,7 +16,7 @@
 ; ============================================================================
 
 #define MyAppName "Flare Download"
-#define MyAppVersion "2.6.1"
+#define MyAppVersion "2.6.2"
 #define MyAppPublisher "Mukund Thiru"
 #define MyAppURL "https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader"
 #define MyAppExeName "Flare Download.exe"

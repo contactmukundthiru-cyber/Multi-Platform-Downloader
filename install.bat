@@ -89,11 +89,39 @@ echo WshShell.Run chr^(34^) ^& "%INSTALL_DIR%\NeonTube.bat" ^& chr^(34^), 0
 echo Set WshShell = Nothing
 ) > "%INSTALL_DIR%\NeonTube.vbs"
 
-:: Create desktop shortcut
+:: Create desktop shortcut (multiple methods for compatibility)
 echo       Creating desktop shortcut...
-powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\NeonTube.lnk'); $Shortcut.TargetPath = 'wscript.exe'; $Shortcut.Arguments = '\"%INSTALL_DIR%\NeonTube.vbs\"'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Multi-Platform Video Downloader'; $Shortcut.Save()"
 
-echo       [OK] Desktop shortcut created
+:: Method 1: Try using Shell Folders registry key for reliable Desktop path
+for /f "tokens=2*" %%a in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v Desktop 2^>nul') do set "DESKTOP_PATH=%%b"
+
+if not defined DESKTOP_PATH (
+    :: Fallback to USERPROFILE\Desktop
+    set "DESKTOP_PATH=%USERPROFILE%\Desktop"
+)
+
+:: Create shortcut using VBScript (more reliable than PowerShell)
+(
+echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
+echo sLinkFile = "%DESKTOP_PATH%\NeonTube.lnk"
+echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
+echo oLink.TargetPath = "wscript.exe"
+echo oLink.Arguments = """%INSTALL_DIR%\NeonTube.vbs"""
+echo oLink.WorkingDirectory = "%INSTALL_DIR%"
+echo oLink.Description = "Multi-Platform Video Downloader"
+echo oLink.Save
+) > "%INSTALL_DIR%\CreateShortcut.vbs"
+
+cscript //nologo "%INSTALL_DIR%\CreateShortcut.vbs" 2>nul
+del "%INSTALL_DIR%\CreateShortcut.vbs" 2>nul
+
+:: Verify shortcut was created
+if exist "%DESKTOP_PATH%\NeonTube.lnk" (
+    echo       [OK] Desktop shortcut created
+) else (
+    echo       [WARN] Could not create desktop shortcut
+    echo       You can run: %INSTALL_DIR%\NeonTube.bat
+)
 
 echo.
 echo ============================================================

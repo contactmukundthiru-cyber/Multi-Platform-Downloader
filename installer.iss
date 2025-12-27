@@ -4,12 +4,13 @@
 ; ============================================================================
 ;
 ; Requirements to build:
-;   1. Install Inno Setup from https://jrsoftware.org/isinfo.php
-;   2. Run build_installer.bat (or open this file in Inno Setup and click Build)
+;   1. Run create_icon.py first to generate icon.ico
+;   2. Install Inno Setup from https://jrsoftware.org/isinfo.php
+;   3. Run build_installer.bat (or open this file in Inno Setup and click Build)
 ;
 ; The installer will:
 ;   - Install all files to Program Files
-;   - Create Start Menu and Desktop shortcuts
+;   - Create Start Menu and Desktop shortcuts with icon
 ;   - Add to Windows "Add/Remove Programs"
 ;   - Support repair and uninstall
 ; ============================================================================
@@ -18,7 +19,8 @@
 #define MyAppVersion "2.6.1"
 #define MyAppPublisher "Mukund Thiru"
 #define MyAppURL "https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader"
-#define MyAppExeName "FlareDownload.exe"
+#define MyAppExeName "Flare Download.exe"
+#define MyAppDescription "Download videos from YouTube, TikTok, Instagram & 1000+ sites"
 
 [Setup]
 ; App identity
@@ -38,13 +40,15 @@ DefaultGroupName={#MyAppName}
 ; Output
 OutputDir=installer_output
 OutputBaseFilename=FlareDownload_Setup_{#MyAppVersion}
-; SetupIconFile=icon.ico  ; Uncomment if you have an icon.ico file
+SetupIconFile=icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 
-; Appearance
+; Appearance - Modern dark themed installer
 WizardStyle=modern
 WizardSizePercent=100
+WizardImageFile=compiler:WizModernImage.bmp
+WizardSmallImageFile=compiler:WizModernSmallImage.bmp
 
 ; Privileges (don't require admin)
 PrivilegesRequired=lowest
@@ -62,32 +66,53 @@ LicenseFile=
 InfoBeforeFile=
 InfoAfterFile=
 
+; Version info embedded in installer
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppDescription}
+VersionInfoTextVersion={#MyAppVersion}
+VersionInfoCopyright=Copyright (C) 2024 {#MyAppPublisher}
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1; Check: not IsAdminInstallMode
+Name: "startmenuicon"; Description: "Create a Start Menu shortcut"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
 
 [Files]
 ; Main executable (built with PyInstaller)
 Source: "dist\Flare Download.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
 
-; If not using PyInstaller, include Python and all dependencies:
-; Source: "python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Source: "ffmpeg\*"; DestDir: "{app}\ffmpeg"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Source: "youtube_downloader.py"; DestDir: "{app}"; Flags: ignoreversion
-; Source: "version.py"; DestDir: "{app}"; Flags: ignoreversion
-; Source: "updater.py"; DestDir: "{app}"; Flags: ignoreversion
+; Icon file for shortcuts
+Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
+; Start Menu shortcuts with icon and description
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"; Comment: "{#MyAppDescription}"; Tasks: startmenuicon
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; IconFilename: "{app}\icon.ico"
+
+; Desktop shortcut with icon and description
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"; Comment: "{#MyAppDescription}"; Tasks: desktopicon
+
+; Taskbar/Quick Launch (for older Windows)
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\icon.ico"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+; Register file associations (optional - for URL protocols)
+Root: HKCU; Subkey: "Software\Classes\{#MyAppName}"; ValueType: string; ValueName: ""; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\{#MyAppName}"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\{#MyAppName}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\icon.ico"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\{#MyAppName}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
+
+; App registration for better Start Menu appearance
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\App Paths\{#MyAppExeName}"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\App Paths\{#MyAppExeName}"; ValueType: string; ValueName: "Path"; ValueData: "{app}"; Flags: uninsdeletekey
 
 [Code]
 // Custom code for cleanup and initialization
@@ -119,6 +144,10 @@ begin
   DeleteFile(DesktopPath + '\NeonTube.lnk');
   DeleteFile(DesktopPath + '\FlareDownload.lnk');
   DeleteFile(DesktopPath + '\YouTube Downloader.lnk');
+
+  // Clean old start menu entries
+  DelTree(ExpandConstant('{group}\..\NeonTube'), True, True, True);
+  DelTree(ExpandConstant('{group}\..\FlareDownload'), True, True, True);
 end;
 
 function InitializeSetup(): Boolean;

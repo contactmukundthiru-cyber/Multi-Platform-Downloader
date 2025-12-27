@@ -34,10 +34,15 @@ jobs:
         python -m py_compile updater.py
         python -m py_compile version.py
 
+    - name: Generate application icon
+      run: |
+        python create_icon.py
+
     - name: Build with PyInstaller
       run: |
         pyinstaller --onefile --windowed --clean `
           --name="Flare Download" `
+          --icon="icon.ico" `
           --add-data="version.py;." `
           --add-data="updater.py;." `
           --hidden-import=customtkinter `

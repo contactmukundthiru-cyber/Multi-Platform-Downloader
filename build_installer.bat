@@ -55,15 +55,28 @@ if errorlevel 1 (
 echo          PyInstaller OK
 
 :: Install dependencies
-echo    [3/6] Installing dependencies...
+echo    [3/7] Installing dependencies...
 pip install customtkinter Pillow yt-dlp -q
 if errorlevel 1 (
     echo    WARNING: Some dependencies may have failed to install
 )
 echo          Dependencies OK
 
+:: Generate icon
+echo    [4/7] Generating application icon...
+if not exist "icon.ico" (
+    python create_icon.py
+    if errorlevel 1 (
+        echo    WARNING: Could not generate icon, using default
+    ) else (
+        echo          Icon generated OK
+    )
+) else (
+    echo          Icon exists OK
+)
+
 :: Check/Install Inno Setup
-echo    [4/6] Checking Inno Setup...
+echo    [5/7] Checking Inno Setup...
 
 set ISCC=
 if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" (
@@ -140,7 +153,7 @@ if "!ISCC!"=="" (
 )
 
 :: Clean old builds
-echo    [5/6] Cleaning old builds...
+echo    [6/7] Cleaning old builds...
 if exist "dist" rmdir /s /q dist
 if exist "build" rmdir /s /q build
 for %%f in (*.spec) do del /f /q "%%f" 2>nul
@@ -148,7 +161,7 @@ if exist "installer_output" rmdir /s /q installer_output
 echo          Clean OK
 
 :: Build with PyInstaller
-echo    [6/6] Building executable with PyInstaller...
+echo    [7/7] Building executable with PyInstaller...
 echo.
 
 :: Check if icon exists

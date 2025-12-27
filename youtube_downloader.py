@@ -138,7 +138,8 @@ class EmberCanvas(Canvas):
         super().__init__(parent, bg=Flare.BLACK, highlightthickness=0, **kwargs)
         self.embers: List[dict] = []
         self.running = True
-        self._create_embers(20)
+        self.frame_count = 0
+        self._create_embers(25)  # More embers
         self._animate()
 
     def _create_embers(self, count):
@@ -146,11 +147,13 @@ class EmberCanvas(Canvas):
             self.embers.append({
                 'x': random.randint(0, 800),
                 'y': random.randint(0, 900),
-                'size': random.uniform(1, 3),
-                'speed': random.uniform(0.3, 1.2),
-                'opacity': random.uniform(0.2, 0.7),
-                'drift': random.uniform(-0.3, 0.3),
-                'flicker': random.uniform(0, math.pi * 2)
+                'size': random.uniform(1.5, 4),  # Larger embers
+                'speed': random.uniform(0.4, 1.5),  # Varied speeds
+                'opacity': random.uniform(0.3, 0.9),  # More visible
+                'drift': random.uniform(-0.5, 0.5),  # More drift
+                'flicker': random.uniform(0, math.pi * 2),
+                'pulse_speed': random.uniform(0.03, 0.08),  # Individual pulse speeds
+                'color_offset': random.uniform(0, 1)  # Color variation
             })
 
     def _animate(self):
@@ -158,43 +161,59 @@ class EmberCanvas(Canvas):
             return
 
         self.delete("ember")
+        self.frame_count += 1
         w = self.winfo_width() or 800
         h = self.winfo_height() or 900
 
         for e in self.embers:
-            # Float upward
+            # Float upward with smoother motion
             e['y'] -= e['speed']
-            e['x'] += e['drift'] + math.sin(e['flicker']) * 0.2
-            e['flicker'] += 0.05
+            e['x'] += e['drift'] + math.sin(e['flicker']) * 0.3
+            e['flicker'] += e['pulse_speed']
 
             # Reset if off screen
             if e['y'] < -10:
                 e['y'] = h + 10
                 e['x'] = random.randint(0, w)
+                e['size'] = random.uniform(1.5, 4)
+                e['speed'] = random.uniform(0.4, 1.5)
             if e['x'] < -10:
                 e['x'] = w + 10
             elif e['x'] > w + 10:
                 e['x'] = -10
 
-            # Flicker effect
+            # Smoother flicker effect
             flicker = 0.5 + 0.5 * math.sin(e['flicker'])
-            alpha = int(e['opacity'] * flicker * 255)
 
-            # Color gradient from red to orange
-            r = min(255, 200 + int(55 * flicker))
-            g = min(255, 50 + int(80 * flicker))
-            b = 0
+            # Dynamic color based on ember state and color_offset
+            hue_shift = e['color_offset'] + self.frame_count * 0.001
+            r = min(255, int(180 + 75 * flicker))
+            g = min(255, int(40 + 100 * flicker * (0.5 + 0.5 * math.sin(hue_shift))))
+            b = min(60, int(20 * flicker))
             color = f'#{r:02x}{g:02x}{b:02x}'
 
-            # Draw ember
-            s = e['size'] * (0.8 + 0.4 * flicker)
+            # Draw ember with glow effect (outer glow + inner core)
+            s = e['size'] * (0.7 + 0.5 * flicker)
+
+            # Outer glow (larger, dimmer)
+            glow_s = s * 1.8
+            glow_r = min(255, r // 2)
+            glow_g = min(255, g // 3)
+            glow_color = f'#{glow_r:02x}{glow_g:02x}00'
+            self.create_oval(
+                e['x'] - glow_s, e['y'] - glow_s,
+                e['x'] + glow_s, e['y'] + glow_s,
+                fill=glow_color, outline="", tags="ember"
+            )
+
+            # Inner core (brighter)
             self.create_oval(
                 e['x'] - s, e['y'] - s,
                 e['x'] + s, e['y'] + s,
                 fill=color, outline="", tags="ember"
             )
 
-        self.after(33, self._animate)  # ~30 FPS
+        self.after(25, self._animate)  # ~40 FPS for smoother animation
 
     def stop(self):
         self.running = False
@@ -330,6 +349,12 @@ class FlareDownloadApp(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.bind("<Configure>", self._on_resize)
 
+        # Keyboard shortcuts
+        self._setup_keyboard_shortcuts()
+
+        # Drag and drop support
+        self._setup_drag_drop()
+
         # Start fade-in animation
         self.attributes('-alpha', 0)
         self._fade_in()
@@ -358,6 +383,108 @@ class FlareDownloadApp(ctk.CTk):
     def _on_resize(self, event=None):
         """Handle window resize."""
         pass
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup global keyboard shortcuts."""
+        # Ctrl+V - Paste URL
+        self.bind("<Control-v>", lambda e: self._paste_url())
+        self.bind("<Control-V>", lambda e: self._paste_url())
+
+        # Ctrl+L - Clear URL
+        self.bind("<Control-l>", lambda e: self._clear_url())
+        self.bind("<Control-L>", lambda e: self._clear_url())
+
+        # Enter - Start download (when not in entry)
+        self.bind("<Return>", self._on_enter_key)
+
+        # Escape - Cancel download
+        self.bind("<Escape>", lambda e: self._cancel_download() if self.is_downloading else None)
+
+        # Ctrl+O - Browse folder
+        self.bind("<Control-o>", lambda e: self._browse_folder())
+        self.bind("<Control-O>", lambda e: self._browse_folder())
+
+        # Log shortcuts on startup
+        self._log("Shortcuts: Ctrl+V=Paste, Ctrl+L=Clear, Enter=Download, Esc=Cancel")
+
+    def _on_enter_key(self, event=None):
+        """Handle Enter key press."""
+        # Don't trigger if typing in an entry
+        focused = self.focus_get()
+        if focused and hasattr(focused, '_entry'):
+            return
+        if not self.is_downloading and self.url_var.get().strip():
+            self._start_download()
+
+    def _setup_drag_drop(self):
+        """Setup drag and drop support for URLs."""
+        # Enable drag and drop on the main window
+        try:
+            # Try to use tkinterdnd2 if available
+            self.drop_target_register('DND_Files', 'DND_Text')
+            self.dnd_bind('<<Drop>>', self._on_drop)
+        except:
+            # Fallback: bind to standard events
+            self.bind("<Button-1>", self._check_clipboard_on_focus)
+
+        # Also make URL entry accept drops
+        self.url_entry.bind("<Button-3>", self._show_context_menu)
+
+    def _on_drop(self, event):
+        """Handle drag and drop."""
+        data = event.data
+        if data:
+            # Clean up the dropped data
+            url = data.strip().strip('"').strip("'")
+            if url.startswith(('http://', 'https://')):
+                self.url_var.set(url)
+                self._log("URL dropped")
+                self._animate_url_drop()
+
+    def _check_clipboard_on_focus(self, event=None):
+        """Check clipboard when window gains focus (fallback for drag-drop)."""
+        pass  # Placeholder for focus-based paste suggestion
+
+    def _show_context_menu(self, event):
+        """Show right-click context menu for URL entry."""
+        menu = ctk.CTkFrame(self, fg_color=Flare.SURFACE_1, corner_radius=4)
+
+        paste_btn = ctk.CTkButton(
+            menu, text="Paste", command=lambda: [self._paste_url(), menu.destroy()],
+            width=80, height=28, corner_radius=0,
+            fg_color="transparent", hover_color=Flare.FIRE,
+            text_color=Flare.WHITE, font=ctk.CTkFont(size=11)
+        )
+        paste_btn.pack(fill="x", padx=2, pady=2)
+
+        clear_btn = ctk.CTkButton(
+            menu, text="Clear", command=lambda: [self._clear_url(), menu.destroy()],
+            width=80, height=28, corner_radius=0,
+            fg_color="transparent", hover_color=Flare.FIRE,
+            text_color=Flare.WHITE, font=ctk.CTkFont(size=11)
+        )
+        clear_btn.pack(fill="x", padx=2, pady=2)
+
+        # Position menu at cursor
+        menu.place(x=event.x_root - self.winfo_rootx(), y=event.y_root - self.winfo_rooty())
+
+        # Close menu when clicking elsewhere
+        def close_menu(e):
+            if menu.winfo_exists():
+                menu.destroy()
+        self.bind("<Button-1>", close_menu, add="+")
+        self.after(3000, lambda: menu.destroy() if menu.winfo_exists() else None)
+
+    def _animate_url_drop(self):
+        """Animate URL field when URL is dropped."""
+        def flash(count=0):
+            if count >= 4:
+                self.url_entry.configure(border_color=Flare.BORDER)
+                return
+            color = Flare.SUCCESS if count % 2 == 0 else Flare.FIRE
+            self.url_entry.configure(border_color=color)
+            self.after(100, lambda: flash(count + 1))
+        flash()
 
     # =========================================================================
     # UI BUILDING
@@ -950,33 +1077,88 @@ class FlareDownloadApp(ctk.CTk):
     # ACTIONS
     # =========================================================================
     def _paste_url(self):
-        """Paste URL from clipboard."""
+        """Paste URL from clipboard with multiple fallback methods."""
+        url = None
+
+        # Method 1: Try tkinter clipboard
         try:
-            # Try tkinter clipboard first
             url = self.clipboard_get()
-            if url and url.strip():
-                self.url_var.set(url.strip())
-                self._log("URL pasted from clipboard")
-            else:
-                self._log("Clipboard is empty", error=True)
         except TclError:
-            # Clipboard empty or inaccessible
-            self._log("Clipboard is empty or inaccessible", error=True)
-        except Exception as e:
-            # Fallback: try subprocess on Windows
+            pass
+        except Exception:
+            pass
+
+        # Method 2: Try pyperclip if available
+        if not url:
             try:
-                if sys.platform == 'win32':
-                    import subprocess
-                    result = subprocess.run(['powershell', '-command', 'Get-Clipboard'],
-                                          capture_output=True, text=True, timeout=2)
-                    url = result.stdout.strip()
-                    if url:
-                        self.url_var.set(url)
-                        self._log("URL pasted from clipboard")
-                        return
+                import pyperclip
+                url = pyperclip.paste()
             except:
                 pass
-            self._log(f"Clipboard error: {e}", error=True)
+
+        # Method 3: Windows PowerShell fallback
+        if not url and sys.platform == 'win32':
+            try:
+                result = subprocess.run(
+                    ['powershell', '-command', 'Get-Clipboard'],
+                    capture_output=True, text=True, timeout=3,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                if result.returncode == 0:
+                    url = result.stdout.strip()
+            except:
+                pass
+
+        # Method 4: Windows clip.exe fallback
+        if not url and sys.platform == 'win32':
+            try:
+                result = subprocess.run(
+                    ['powershell', '-command', '[Console]::OutputEncoding = [Text.Encoding]::UTF8; Get-Clipboard'],
+                    capture_output=True, text=True, timeout=3,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                if result.returncode == 0:
+                    url = result.stdout.strip()
+            except:
+                pass
+
+        # Method 5: Linux xclip/xsel fallback
+        if not url and sys.platform.startswith('linux'):
+            for cmd in [['xclip', '-selection', 'clipboard', '-o'], ['xsel', '--clipboard', '--output']]:
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                    if result.returncode == 0:
+                        url = result.stdout.strip()
+                        break
+                except:
+                    pass
+
+        # Method 6: macOS pbpaste fallback
+        if not url and sys.platform == 'darwin':
+            try:
+                result = subprocess.run(['pbpaste'], capture_output=True, text=True, timeout=2)
+                if result.returncode == 0:
+                    url = result.stdout.strip()
+            except:
+                pass
+
+        # Process the URL
+        if url and url.strip():
+            url = url.strip()
+            self.url_var.set(url)
+            self._log("URL pasted from clipboard")
+            self._animate_url_drop()
+        else:
+            self._log("Clipboard is empty or inaccessible", error=True)
+            # Show helpful message
+            messagebox.showinfo(
+                "Paste Help",
+                "Could not access clipboard.\n\n"
+                "Try:\n"
+                "1. Copy a URL first (Ctrl+C)\n"
+                "2. Click in the URL field and press Ctrl+V\n"
+                "3. Or type/paste the URL manually"
+            )
 
     def _clear_url(self):
         """Clear URL input."""

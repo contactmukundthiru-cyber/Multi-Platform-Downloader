@@ -16,7 +16,7 @@
 ; ============================================================================
 
 #define MyAppName "Flare Download"
-#define MyAppVersion "2.8.3"
+#define MyAppVersion "2.8.4"
 #define MyAppPublisher "Mukund Thiru"
 #define MyAppURL "https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader"
 #define MyAppExeName "Flare Download.exe"
@@ -85,6 +85,10 @@ Source: "dist\Flare Download.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"
 
 ; Icon file for shortcuts
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+
+; FFmpeg binaries (required for audio/video conversion)
+Source: "ffmpeg\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "ffmpeg\ffprobe.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu shortcuts with icon and description

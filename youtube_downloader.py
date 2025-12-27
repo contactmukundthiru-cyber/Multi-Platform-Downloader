@@ -41,7 +41,7 @@ import yt_dlp
 try:
     from version import __version__, GITHUB_REPO
 except ImportError:
-    __version__ = "2.8.3"
+    __version__ = "2.8.4"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
 
 try:
@@ -500,76 +500,102 @@ class FlareDownloadApp(ctk.CTk):
 
         self._log(f"Starting download: {url[:70]}...")
 
+        # Get FFmpeg path (bundled with app)
+        if getattr(sys, 'frozen', False):
+            # Running as compiled exe
+            app_dir = os.path.dirname(sys.executable)
+        else:
+            # Running as script
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+
+        ffmpeg_path = os.path.join(app_dir, 'ffmpeg.exe')
+
         # Build yt-dlp options
         ydl_opts = {
             'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
             'noplaylist': True,
             'socket_timeout': 30,
-            'retries': 5,
-            'fragment_retries': 5,
+            'retries': 10,
+            'fragment_retries': 10,
             'progress_hooks': [self._progress_hook],
             'quiet': True,
             'no_warnings': True,
+            'ignoreerrors': False,
+            'nocheckcertificate': True,
+            'geo_bypass': True,
+            'extractor_retries': 5,
+            'file_access_retries': 5,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
         }
+
+        # Set FFmpeg location if bundled
+        if os.path.exists(ffmpeg_path):
+            ydl_opts['ffmpeg_location'] = app_dir
+        else:
+            self._log("Note: FFmpeg not found, some formats may not work")
 
         if is_audio:
             # Audio extraction
             ydl_opts['format'] = 'bestaudio/best'
+            # Quality mapping
+            quality_map = {'Best': '0', '320k': '0', '256k': '1', '192k': '2', '128k': '5'}
             ydl_opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': fmt,
+                'preferredquality': quality_map.get(quality, '2'),
             }]
-            # Quality mapping (0=best, 9=worst)
-            quality_map = {'Best': 0, '320k': 0, '256k': 2, '192k': 4, '128k': 6}
-            ydl_opts['postprocessor_args'] = {
-                'extractaudio': ['-q:a', str(quality_map.get(quality, 5))]
-            }
         else:
-            # Video format selection - simple and reliable
+            # Video format selection with robust fallbacks
             if quality == "Best":
-                ydl_opts['format'] = 'bestvideo+bestaudio/best'
+                ydl_opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
             else:
                 height = quality.replace("p", "")
-                # Try specific height, fallback to best
-                ydl_opts['format'] = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/bestvideo+bestaudio/best'
+                ydl_opts['format'] = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
 
-            # Output format
-            if fmt in ['mp4', 'mkv', 'webm']:
-                ydl_opts['merge_output_format'] = fmt
-            elif fmt in ['mov', 'avi']:
-                ydl_opts['merge_output_format'] = 'mp4'
-                ydl_opts['postprocessors'] = [{
-                    'key': 'FFmpegVideoConvertor',
-                    'preferedformat': fmt,
-                }]
+            # Set output format
+            ydl_opts['merge_output_format'] = fmt
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 self.after(0, lambda: self._log("Fetching video info..."))
                 info = ydl.extract_info(url, download=True)
-                title = info.get('title', 'Unknown')
-                self.after(0, lambda t=title: self._log(f"Downloaded: {t}"))
-
-            self.after(0, lambda: self._download_complete(True))
+                if info:
+                    title = info.get('title', 'Unknown')
+                    self.after(0, lambda t=title: self._log(f"Downloaded: {t}"))
+                    self.after(0, lambda: self._download_complete(True))
+                else:
+                    self.after(0, lambda: self._download_complete(False, "Could not extract video info"))
 
         except yt_dlp.utils.DownloadCancelled:
             self.after(0, lambda: self._log("Download cancelled"))
         except yt_dlp.utils.DownloadError as e:
             error_msg = str(e)
-            # Clean up error message
+            # Clean up error message for user
             if "Video unavailable" in error_msg:
                 error_msg = "Video unavailable or private"
-            elif "Sign in" in error_msg:
-                error_msg = "Video requires sign-in (age-restricted or private)"
+            elif "Sign in" in error_msg or "age" in error_msg.lower():
+                error_msg = "Video requires sign-in (age-restricted)"
             elif "HTTP Error 403" in error_msg:
-                error_msg = "Access forbidden - video may be region-locked"
+                error_msg = "Access forbidden - try a different video"
             elif "HTTP Error 404" in error_msg:
                 error_msg = "Video not found"
+            elif "ffmpeg" in error_msg.lower() or "ffprobe" in error_msg.lower():
+                error_msg = "FFmpeg needed for this format - try MP4 video or M4A audio"
+            elif "Unsupported URL" in error_msg:
+                error_msg = "Unsupported URL - check the link"
+            elif "No video formats" in error_msg:
+                error_msg = "No downloadable formats found"
             else:
-                error_msg = error_msg[:100]
+                # Truncate long error messages
+                error_msg = error_msg.split('\n')[0][:80]
             self.after(0, lambda e=error_msg: self._download_complete(False, e))
         except Exception as e:
-            self.after(0, lambda e=str(e)[:100]: self._download_complete(False, e))
+            error_str = str(e)
+            if "ffmpeg" in error_str.lower():
+                error_str = "FFmpeg required - try MP4 or M4A format"
+            self.after(0, lambda e=error_str[:80]: self._download_complete(False, e))
 
     def _download_complete(self, success, error=None):
         self.is_downloading = False

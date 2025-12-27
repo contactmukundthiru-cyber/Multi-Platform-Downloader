@@ -61,7 +61,7 @@ check_dependencies()
 
 # Now safe to import
 import customtkinter as ctk
-from tkinter import filedialog, messagebox, Canvas
+from tkinter import filedialog, messagebox, Canvas, TclError
 import threading
 import re
 import subprocess
@@ -73,7 +73,7 @@ from typing import Optional, List
 try:
     from version import __version__, GITHUB_REPO
 except ImportError:
-    __version__ = "2.6.0"
+    __version__ = "2.6.1"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
 
 # Import updater
@@ -952,11 +952,31 @@ class FlareDownloadApp(ctk.CTk):
     def _paste_url(self):
         """Paste URL from clipboard."""
         try:
+            # Try tkinter clipboard first
             url = self.clipboard_get()
-            self.url_var.set(url)
-            self._log("URL pasted from clipboard")
-        except Exception:
-            self._log("Clipboard is empty", error=True)
+            if url and url.strip():
+                self.url_var.set(url.strip())
+                self._log("URL pasted from clipboard")
+            else:
+                self._log("Clipboard is empty", error=True)
+        except TclError:
+            # Clipboard empty or inaccessible
+            self._log("Clipboard is empty or inaccessible", error=True)
+        except Exception as e:
+            # Fallback: try subprocess on Windows
+            try:
+                if sys.platform == 'win32':
+                    import subprocess
+                    result = subprocess.run(['powershell', '-command', 'Get-Clipboard'],
+                                          capture_output=True, text=True, timeout=2)
+                    url = result.stdout.strip()
+                    if url:
+                        self.url_var.set(url)
+                        self._log("URL pasted from clipboard")
+                        return
+            except:
+                pass
+            self._log(f"Clipboard error: {e}", error=True)
 
     def _clear_url(self):
         """Clear URL input."""

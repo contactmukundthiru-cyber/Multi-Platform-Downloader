@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-NeonTube Release Builder
-Creates distribution packages for GitHub and Gumroad releases
+Flare Download Release Builder
+Creates distribution packages for GitHub releases
 """
 
 import os
@@ -9,7 +9,6 @@ import sys
 import shutil
 import zipfile
 import hashlib
-import json
 from datetime import datetime
 from pathlib import Path
 
@@ -31,12 +30,13 @@ class ReleaseBuilder:
             'youtube_downloader.py',
             'updater.py',
             'version.py',
-            'installer_gui.py',
             'requirements.txt',
             'README.md',
             'LICENSE',
             'install.sh',
             'install.bat',
+            'build_installer.bat',
+            'installer.iss',
         ]
 
     def clean_dist(self):
@@ -53,7 +53,7 @@ class ReleaseBuilder:
             with open(license_path, 'w') as f:
                 f.write(f"""MIT License
 
-Copyright (c) {datetime.now().year} NeonTube
+Copyright (c) {datetime.now().year} Mukund Thiru
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -77,47 +77,15 @@ SOFTWARE.
 
     def build_source_zip(self):
         """Create source distribution zip"""
-        zip_name = f"NeonTube-v{self.version}-source.zip"
+        zip_name = f"FlareDownload-v{self.version}-source.zip"
         zip_path = os.path.join(self.dist_dir, zip_name)
 
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
             for filename in self.release_files:
                 filepath = os.path.join(self.project_dir, filename)
                 if os.path.exists(filepath):
-                    zf.write(filepath, f"NeonTube/{filename}")
+                    zf.write(filepath, f"FlareDownload/{filename}")
                     print(f"    Added: {filename}")
-
-        print(f"[+] Created: {zip_name}")
-        return zip_path
-
-    def build_installer_package(self):
-        """Create installer-only package"""
-        zip_name = f"NeonTube-v{self.version}-installer.zip"
-        zip_path = os.path.join(self.dist_dir, zip_name)
-
-        installer_files = [
-            'installer_gui.py',
-            'youtube_downloader.py',
-            'updater.py',
-            'version.py',
-            'requirements.txt',
-            'README.md',
-        ]
-
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for filename in installer_files:
-                filepath = os.path.join(self.project_dir, filename)
-                if os.path.exists(filepath):
-                    zf.write(filepath, filename)
-
-            # Add quick install script
-            install_script = '''#!/usr/bin/env python3
-"""Quick Install Script - Run: python install.py"""
-import subprocess
-import sys
-subprocess.run([sys.executable, 'installer_gui.py'])
-'''
-            zf.writestr('install.py', install_script)
 
         print(f"[+] Created: {zip_name}")
         return zip_path
@@ -128,14 +96,14 @@ subprocess.run([sys.executable, 'installer_gui.py'])
         checksum_file = os.path.join(self.dist_dir, 'checksums.txt')
 
         for filename in os.listdir(self.dist_dir):
-            if filename.endswith('.zip'):
+            if filename.endswith('.zip') or filename.endswith('.exe'):
                 filepath = os.path.join(self.dist_dir, filename)
                 with open(filepath, 'rb') as f:
                     sha256 = hashlib.sha256(f.read()).hexdigest()
                 checksums[filename] = sha256
 
         with open(checksum_file, 'w') as f:
-            f.write(f"NeonTube v{self.version} - SHA256 Checksums\n")
+            f.write(f"Flare Download v{self.version} - SHA256 Checksums\n")
             f.write("=" * 50 + "\n\n")
             for name, checksum in checksums.items():
                 f.write(f"{checksum}  {name}\n")
@@ -148,33 +116,33 @@ subprocess.run([sys.executable, 'installer_gui.py'])
         notes_path = os.path.join(self.dist_dir, 'RELEASE_NOTES.md')
 
         with open(notes_path, 'w') as f:
-            f.write(f"""# NeonTube v{self.version} Release
+            f.write(f"""# Flare Download v{self.version} Release
 
 ## What's New
 - Add your release notes here
 
 ## Features
 - Multi-platform video downloader (YouTube, TikTok, Instagram, Twitter, and 1000+ sites)
-- Futuristic dark UI with neon accents
+- Cinematic dark UI with animated ember effects
 - Video: MP4, WebM, MKV, AVI, MOV
-- Audio: MP3, WAV, M4A, FLAC, AAC, Opus, OGG
-- Quality: 8K to 144p video, 320-64 kbps audio
-- Subtitles, thumbnails, metadata embedding
-- Auto-update functionality
+- Audio: MP3, WAV, M4A, FLAC, AAC, Opus
+- Quality: 4K to 360p video, 320-96 kbps audio
+- Auto-update functionality via GitHub
 
 ## Installation
 
-### Quick Install (Recommended)
-1. Download `NeonTube-v{self.version}-installer.zip`
-2. Extract and run `python install.py`
+### Windows Installer (Recommended)
+1. Download `FlareDownload_Setup_{self.version}.exe`
+2. Run the installer
+3. Done! Find "Flare Download" in Start Menu
 
 ### Manual Install
-1. Download `NeonTube-v{self.version}-source.zip`
-2. Extract and run `./install.sh` (Linux/Mac) or `install.bat` (Windows)
+1. Download `FlareDownload-v{self.version}-source.zip`
+2. Extract and run `install.bat` (Windows) or `install.sh` (Linux/Mac)
 
 ## Requirements
-- Python 3.8+
-- FFmpeg (optional, for video merging)
+- Windows 10/11, macOS 10.14+, or Linux
+- Internet connection for downloading
 
 ## Checksums
 See `checksums.txt` for SHA256 verification.
@@ -182,44 +150,10 @@ See `checksums.txt` for SHA256 verification.
 
         print("[+] Created RELEASE_NOTES.md")
 
-    def create_gumroad_package(self):
-        """Create premium package for Gumroad"""
-        zip_name = f"NeonTube-v{self.version}-premium.zip"
-        zip_path = os.path.join(self.dist_dir, zip_name)
-
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            # Add all source files
-            for filename in self.release_files:
-                filepath = os.path.join(self.project_dir, filename)
-                if os.path.exists(filepath):
-                    zf.write(filepath, f"NeonTube/{filename}")
-
-            # Add bonus content placeholder
-            bonus_readme = """# NeonTube Premium Edition
-
-Thank you for purchasing NeonTube!
-
-## Premium Features
-- Priority support
-- Early access to updates
-- Premium themes (coming soon)
-
-## Support
-For support, please email: support@neontube.app
-
-## Updates
-Run the updater to check for new versions:
-python -c "from updater import Updater; Updater().check_for_updates()"
-"""
-            zf.writestr('NeonTube/PREMIUM_README.md', bonus_readme)
-
-        print(f"[+] Created: {zip_name} (Gumroad)")
-        return zip_path
-
     def build_all(self):
         """Build all release packages"""
         print("\n" + "=" * 50)
-        print(f"  Building NeonTube v{self.version} Release")
+        print(f"  Building Flare Download v{self.version} Release")
         print("=" * 50 + "\n")
 
         self.clean_dist()
@@ -227,8 +161,6 @@ python -c "from updater import Updater; Updater().check_for_updates()"
 
         print("\n[*] Building packages...")
         self.build_source_zip()
-        self.build_installer_package()
-        self.create_gumroad_package()
 
         print("\n[*] Generating checksums...")
         self.calculate_checksums()
@@ -247,9 +179,10 @@ python -c "from updater import Updater; Updater().check_for_updates()"
 
         print("\n[*] Next steps:")
         print("  1. Review RELEASE_NOTES.md and add changelog")
-        print("  2. Upload to GitHub Releases:")
-        print(f"     gh release create v{self.version} dist/*.zip")
-        print("  3. Upload premium package to Gumroad")
+        print("  2. Build Windows installer: build_installer.bat")
+        print("  3. Upload to GitHub Releases:")
+        print(f"     git tag v{self.version}")
+        print(f"     git push origin v{self.version}")
 
 
 def main():

@@ -1,0 +1,141 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller customtkinter Pillow yt-dlp
+
+    - name: Verify Python files
+      run: |
+        python -m py_compile youtube_downloader.py
+        python -m py_compile updater.py
+        python -m py_compile version.py
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --onefile --windowed --clean `
+          --name="Flare Download" `
+          --add-data="version.py;." `
+          --add-data="updater.py;." `
+          --hidden-import=customtkinter `
+          --hidden-import=PIL `
+          --hidden-import=PIL._tkinter_finder `
+          --hidden-import=yt_dlp `
+          youtube_downloader.py
+
+    - name: Verify PyInstaller output
+      run: |
+        if (Test-Path "dist\Flare Download.exe") {
+          Write-Host "PyInstaller build successful"
+          Get-Item "dist\Flare Download.exe" | Select-Object Name, Length
+        } else {
+          Write-Error "PyInstaller build failed - executable not found"
+          exit 1
+        }
+
+    - name: Install Inno Setup
+      run: |
+        choco install innosetup -y --no-progress
+
+    - name: Build Installer
+      run: |
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+    - name: Verify Installer output
+      run: |
+        $installer = Get-ChildItem -Path "installer_output" -Filter "*.exe" | Select-Object -First 1
+        if ($installer) {
+          Write-Host "Installer build successful: $($installer.Name)"
+          Write-Host "Size: $([math]::Round($installer.Length / 1MB, 2)) MB"
+        } else {
+          Write-Error "Installer build failed - no exe found"
+          exit 1
+        }
+
+    - name: Upload Standalone Executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlareDownload-Standalone
+        path: dist/Flare Download.exe
+        retention-days: 30
+
+    - name: Upload Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlareDownload-Installer
+        path: installer_output/FlareDownload_Setup_*.exe
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download Installer Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: FlareDownload-Installer
+        path: ./release
+
+    - name: Download Standalone Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: FlareDownload-Standalone
+        path: ./release
+
+    - name: List release files
+      run: |
+        echo "Release files:"
+        ls -la ./release/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          release/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+        body: |
+          ## Flare Download ${{ github.ref_name }}
+
+          ### Installation
+          1. Download `FlareDownload_Setup_*.exe`
+          2. Run the installer
+          3. Find "Flare Download" in your Start Menu
+
+          ### Features
+          - Download from YouTube, TikTok, Instagram, Twitter & 1000+ sites
+          - Cinematic dark UI with animated ember effects
+          - Auto-update functionality
+
+          See [README](https://github.com/${{ github.repository }}) for full documentation.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

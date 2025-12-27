@@ -6,6 +6,41 @@ Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram
 ![Python](https://img.shields.io/badge/python-3.8+-ff6b35)
 ![License](https://img.shields.io/badge/license-MIT-ff8c00)
 
+---
+
+## 🚀 Super Easy Installation (No Technical Knowledge Needed!)
+
+### Windows - Just Download & Double-Click!
+
+1. **Download** `install.bat` from this page (click the green "Code" button → "Download ZIP")
+2. **Extract** the ZIP file anywhere
+3. **Double-click** `install.bat`
+4. **Done!** A "Flare Download" shortcut will appear on your Desktop
+
+That's it! No command line, no technical steps. Just double-click and go.
+
+---
+
+### macOS - Just Download & Double-Click!
+
+1. **Download** the ZIP from this page
+2. **Extract** the ZIP file
+3. **Double-click** `Install Flare Download.command`
+4. If prompted, click "Open" to allow the installer
+5. **Done!** Find "Flare Download" in your Applications folder
+
+---
+
+### Linux
+
+```bash
+curl -sSL https://raw.githubusercontent.com/contactmukundthiru-cyber/Multi-Platform-Downloader/main/install.sh | bash
+```
+
+Or download and run `install.sh` directly.
+
+---
+
 ## Supported Platforms
 
 | Platform | Videos | Audio | Stories/Reels |
@@ -25,48 +60,21 @@ Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram
 ## Features
 
 - **Multi-Platform**: Download from 1000+ websites
-- **Fire-themed UI**: Dark theme with ember/flame accents
-- **Video Formats**: MP4, WebM, MKV, AVI, MOV
-- **Audio Formats**: MP3, WAV, M4A, FLAC, AAC, Opus, OGG
-- **Quality Options**: 8K, 4K, 2K, 1080p, 720p, 480p, 360p, 240p, 144p
-- **Audio Bitrates**: 320, 256, 192, 128, 96, 64 kbps
-- **Auto-Update**: Built-in update checker
-- **Subtitles & Thumbnails**: Download extras
+- **Cinematic UI**: Premium dark theme with animated effects
+- **Video Formats**: MP4, WebM, MKV, MOV, AVI
+- **Audio Formats**: MP3, M4A, WAV, FLAC, Opus, AAC
+- **Quality Options**: 4K, 1080p, 720p, 480p, 360p
+- **Audio Bitrates**: 320k, 256k, 192k, 128k, 96k
+- **Animated Particles**: Floating ember effects
+- **Progress Ring**: Circular progress indicator
 
-## Quick Install
+## How to Use
 
-### One-Line Install (Linux/macOS)
-```bash
-curl -sSL https://raw.githubusercontent.com/contactmukundthiru-cyber/Multi-Platform-Downloader/main/install.sh | bash
-```
-
-### Windows
-1. Download the ZIP from GitHub
-2. Extract and run `install.bat`
-3. Use the desktop shortcut
-
-### Manual Installation
-```bash
-git clone https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader.git
-cd Multi-Platform-Downloader
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python youtube_downloader.py
-```
-
-## Requirements
-
-- Python 3.8+
-- FFmpeg (optional, for video merging)
-
-## Usage
-
-1. Launch Flare Download
-2. Paste any video URL
-3. Select Video or Audio
-4. Choose Format and Quality
-5. Click **DOWNLOAD**
+1. **Open** Flare Download (double-click the shortcut)
+2. **Paste** any video URL
+3. **Select** Video or Audio
+4. **Choose** Format and Quality
+5. **Click** DOWNLOAD
 
 ## Part of Flare
 

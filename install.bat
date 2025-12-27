@@ -2,347 +2,305 @@
 setlocal enabledelayedexpansion
 
 :: ============================================================================
-:: FLARE DOWNLOAD - FULLY AUTOMATED INSTALLER
-:: Works on any Windows PC - Zero technical knowledge required
+:: FLARE DOWNLOAD - One-Click Windows Installer
+:: For people who have never used a command line before
+:: Just double-click this file and everything will be set up automatically!
 :: ============================================================================
 
 title Flare Download - Installing...
-color 0F
-mode con: cols=80 lines=40
 
-echo.
-echo  ============================================================
-echo.
-echo     ███████╗██╗      █████╗ ██████╗ ███████╗
-echo     ██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝
-echo     █████╗  ██║     ███████║██████╔╝█████╗
-echo     ██╔══╝  ██║     ██╔══██║██╔══██╗██╔══╝
-echo     ██║     ███████╗██║  ██║██║  ██║███████╗
-echo     ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
-echo.
-echo                      DOWNLOAD
-echo.
-echo     Multi-Platform Video Downloader
-echo     YouTube, TikTok, Instagram, Twitter + 1000 more
-echo.
-echo  ============================================================
-echo.
-echo     Please wait while we set everything up for you.
-echo     This may take 5-10 minutes on first install.
-echo.
-echo  ============================================================
-echo.
+:: Set colors
+color 0C
 
-:: ============================================================================
-:: CONFIGURATION
-:: ============================================================================
-
-set "INSTALL_DIR=%LOCALAPPDATA%\FlareDownload"
-set "PYTHON_DIR=%INSTALL_DIR%\python"
-set "FFMPEG_DIR=%INSTALL_DIR%\ffmpeg"
-set "NODEJS_DIR=%INSTALL_DIR%\node"
-set "SCRIPT_DIR=%~dp0"
-set "TEMP_DIR=%TEMP%\FlareInstaller_%RANDOM%"
-
-:: Create directories
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
-
-:: ============================================================================
-:: STEP 1: INSTALL PYTHON
-:: ============================================================================
-
-echo [Step 1/6] Setting up Python...
-
-:: Check if we already have embedded Python
-if exist "%PYTHON_DIR%\python.exe" (
-    echo           Python already installed.
-    goto :PythonReady
+:: Check if running as admin (not required but helpful)
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    set "ADMIN=1"
+) else (
+    set "ADMIN=0"
 )
 
-echo           Downloading Python 3.11...
+:: Set install directory (user's local app data - no admin needed)
+set "INSTALL_DIR=%LOCALAPPDATA%\FlareDownload"
+set "DESKTOP=%USERPROFILE%\Desktop"
+set "STARTMENU=%APPDATA%\Microsoft\Windows\Start Menu\Programs"
+
+:: Create install directory
+if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+
+:: ============================================================================
+:: BANNER
+:: ============================================================================
+cls
+echo.
+echo   [91m ███████╗██╗      █████╗ ██████╗ ███████╗[0m
+echo   [91m ██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝[0m
+echo   [91m █████╗  ██║     ███████║██████╔╝█████╗  [0m
+echo   [91m ██╔══╝  ██║     ██╔══██║██╔══██╗██╔══╝  [0m
+echo   [91m ██║     ███████╗██║  ██║██║  ██║███████╗[0m
+echo   [91m ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝[0m
+echo.
+echo   [93mDOWNLOAD[0m - Multi-Platform Video Downloader
+echo.
+echo   ══════════════════════════════════════════════════════
+echo.
+echo   [96mThis installer will set up everything automatically.[0m
+echo   [96mNo technical knowledge required![0m
+echo.
+echo   ══════════════════════════════════════════════════════
+echo.
+echo   Press any key to start installation...
+pause >nul
+
+:: ============================================================================
+:: STEP 1: Download Python (Embedded/Portable)
+:: ============================================================================
+cls
+echo.
+echo   [93m[1/5][0m Downloading Python...
+echo.
+
+set "PYTHON_DIR=%INSTALL_DIR%\python"
+set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
+
+if exist "%PYTHON_EXE%" (
+    echo   [92m✓[0m Python already installed
+    goto :step2
+)
+
+echo   [96m→[0m Downloading Python 3.11 (this may take a minute)...
 
 :: Download Python embeddable
-set "PYTHON_URL=https://www.python.org/ftp/python/3.11.7/python-3.11.7-embed-amd64.zip"
-set "PYTHON_ZIP=%TEMP_DIR%\python.zip"
+set "PYTHON_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip"
+set "PYTHON_ZIP=%INSTALL_DIR%\python.zip"
 
-powershell -Command "& {$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; try{Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%PYTHON_ZIP%' -UseBasicParsing}catch{exit 1}}" 2>nul
-
-if not exist "%PYTHON_ZIP%" (
-    echo           [!] Download failed. Trying alternate method...
-    curl -L -s -o "%PYTHON_ZIP%" "%PYTHON_URL%" 2>nul
-)
+:: Try PowerShell download
+powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%') } catch { exit 1 }}" 2>nul
 
 if not exist "%PYTHON_ZIP%" (
     echo.
-    echo  ============================================================
-    echo   ERROR: Could not download Python.
+    echo   [91m✗ Download failed.[0m
+    echo.
     echo   Please check your internet connection and try again.
-    echo  ============================================================
-    pause
-    exit /b 1
-)
-
-echo           Extracting Python...
-if not exist "%PYTHON_DIR%" mkdir "%PYTHON_DIR%"
-powershell -Command "& {$ProgressPreference='SilentlyContinue'; Expand-Archive -Path '%PYTHON_ZIP%' -DestinationPath '%PYTHON_DIR%' -Force}" 2>nul
-
-:: Configure Python for pip
-echo           Configuring Python...
-(
-echo python311.zip
-echo .
-echo Lib
-echo Lib\site-packages
-echo import site
-) > "%PYTHON_DIR%\python311._pth"
-
-if not exist "%PYTHON_DIR%\Lib" mkdir "%PYTHON_DIR%\Lib"
-if not exist "%PYTHON_DIR%\Lib\site-packages" mkdir "%PYTHON_DIR%\Lib\site-packages"
-
-:: Install pip
-echo           Installing pip...
-set "GET_PIP=%TEMP_DIR%\get-pip.py"
-powershell -Command "& {$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.py' -OutFile '%GET_PIP%' -UseBasicParsing}" 2>nul
-
-"%PYTHON_DIR%\python.exe" "%GET_PIP%" --no-warn-script-location -q 2>nul
-
-echo           Python ready.
-
-:PythonReady
-set "PYTHON=%PYTHON_DIR%\python.exe"
-set "PIP=%PYTHON_DIR%\Scripts\pip.exe"
-
-:: ============================================================================
-:: STEP 2: INSTALL NODE.JS (Required for yt-dlp YouTube support)
-:: ============================================================================
-
-echo.
-echo [Step 2/6] Setting up JavaScript runtime...
-
-if exist "%NODEJS_DIR%\node.exe" (
-    echo           Node.js already installed.
-    goto :NodeReady
-)
-
-echo           Downloading Node.js...
-
-:: Download Node.js (required for yt-dlp to work with YouTube)
-set "NODE_URL=https://nodejs.org/dist/v20.10.0/node-v20.10.0-win-x64.zip"
-set "NODE_ZIP=%TEMP_DIR%\node.zip"
-
-powershell -Command "& {$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; try{Invoke-WebRequest -Uri '%NODE_URL%' -OutFile '%NODE_ZIP%' -UseBasicParsing}catch{exit 1}}" 2>nul
-
-if exist "%NODE_ZIP%" (
-    echo           Extracting Node.js...
-    powershell -Command "& {$ProgressPreference='SilentlyContinue'; Expand-Archive -Path '%NODE_ZIP%' -DestinationPath '%TEMP_DIR%\node_temp' -Force}" 2>nul
-
-    if not exist "%NODEJS_DIR%" mkdir "%NODEJS_DIR%"
-
-    :: Copy node.exe
-    for /d %%d in ("%TEMP_DIR%\node_temp\node-*") do (
-        copy /Y "%%d\node.exe" "%NODEJS_DIR%\" >nul 2>&1
-    )
-
-    if exist "%NODEJS_DIR%\node.exe" (
-        echo           Node.js ready.
-    ) else (
-        echo           [!] Node.js setup skipped.
-    )
-
-    rmdir /s /q "%TEMP_DIR%\node_temp" 2>nul
-) else (
-    echo           [!] Node.js download skipped. Some features may be limited.
-)
-
-:NodeReady
-
-:: ============================================================================
-:: STEP 3: INSTALL FFMPEG
-:: ============================================================================
-
-echo.
-echo [Step 3/6] Setting up FFmpeg...
-
-if exist "%FFMPEG_DIR%\ffmpeg.exe" (
-    echo           FFmpeg already installed.
-    goto :FFmpegReady
-)
-
-echo           Downloading FFmpeg...
-
-:: Try multiple FFmpeg sources
-set "FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
-set "FFMPEG_ZIP=%TEMP_DIR%\ffmpeg.zip"
-
-powershell -Command "& {$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; try{Invoke-WebRequest -Uri '%FFMPEG_URL%' -OutFile '%FFMPEG_ZIP%' -UseBasicParsing -TimeoutSec 120}catch{exit 1}}" 2>nul
-
-if exist "%FFMPEG_ZIP%" (
-    echo           Extracting FFmpeg...
-    if not exist "%FFMPEG_DIR%" mkdir "%FFMPEG_DIR%"
-    powershell -Command "& {$ProgressPreference='SilentlyContinue'; Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%TEMP_DIR%\ffmpeg_temp' -Force}" 2>nul
-
-    :: Find and copy ffmpeg executables
-    for /r "%TEMP_DIR%\ffmpeg_temp" %%f in (ffmpeg.exe) do (
-        copy /Y "%%f" "%FFMPEG_DIR%\" >nul 2>&1
-    )
-    for /r "%TEMP_DIR%\ffmpeg_temp" %%f in (ffprobe.exe) do (
-        copy /Y "%%f" "%FFMPEG_DIR%\" >nul 2>&1
-    )
-
-    rmdir /s /q "%TEMP_DIR%\ffmpeg_temp" 2>nul
-
-    if exist "%FFMPEG_DIR%\ffmpeg.exe" (
-        echo           FFmpeg ready.
-    ) else (
-        echo           [!] FFmpeg extraction failed.
-    )
-) else (
-    echo           [!] FFmpeg download skipped. Video merging may be limited.
-)
-
-:FFmpegReady
-
-:: ============================================================================
-:: STEP 4: COPY APPLICATION FILES
-:: ============================================================================
-
-echo.
-echo [Step 4/6] Installing Flare Download...
-
-if exist "%SCRIPT_DIR%youtube_downloader.py" (
-    copy /Y "%SCRIPT_DIR%youtube_downloader.py" "%INSTALL_DIR%\" >nul
-    copy /Y "%SCRIPT_DIR%version.py" "%INSTALL_DIR%\" >nul 2>&1
-    copy /Y "%SCRIPT_DIR%updater.py" "%INSTALL_DIR%\" >nul 2>&1
-    copy /Y "%SCRIPT_DIR%requirements.txt" "%INSTALL_DIR%\" >nul 2>&1
-    echo           Application files installed.
-) else (
     echo.
-    echo  ============================================================
-    echo   ERROR: Application files not found.
-    echo   Please run this installer from the Flare Download folder.
-    echo  ============================================================
     pause
     exit /b 1
 )
 
-:: ============================================================================
-:: STEP 5: INSTALL PYTHON PACKAGES
-:: ============================================================================
+echo   [96m→[0m Extracting Python...
+mkdir "%PYTHON_DIR%" 2>nul
+powershell -Command "Expand-Archive -Path '%PYTHON_ZIP%' -DestinationPath '%PYTHON_DIR%' -Force" 2>nul
+del "%PYTHON_ZIP%" 2>nul
 
+:: Enable pip in embedded Python
+set "PTH_FILE=%PYTHON_DIR%\python311._pth"
+if exist "%PTH_FILE%" (
+    echo python311.zip> "%PTH_FILE%"
+    echo .>> "%PTH_FILE%"
+    echo Lib\site-packages>> "%PTH_FILE%"
+    echo import site>> "%PTH_FILE%"
+)
+
+:: Download get-pip.py
+echo   [96m→[0m Installing pip...
+set "GETPIP=%INSTALL_DIR%\get-pip.py"
+powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://bootstrap.pypa.io/get-pip.py', '%GETPIP%')}" 2>nul
+
+"%PYTHON_EXE%" "%GETPIP%" --no-warn-script-location >nul 2>&1
+del "%GETPIP%" 2>nul
+
+echo   [92m✓[0m Python installed successfully
 echo.
-echo [Step 5/6] Installing Python packages...
-echo           This may take a few minutes...
 
-:: Upgrade pip first
-"%PYTHON%" -m pip install --upgrade pip -q 2>nul
-
-:: Install packages one by one for better error handling
-echo           Installing customtkinter...
-"%PIP%" install customtkinter -q 2>nul
-if errorlevel 1 "%PYTHON%" -m pip install customtkinter -q 2>nul
-
-echo           Installing yt-dlp...
-"%PIP%" install yt-dlp -q 2>nul
-if errorlevel 1 "%PYTHON%" -m pip install yt-dlp -q 2>nul
-
-echo           Installing additional packages...
-"%PIP%" install packaging pillow -q 2>nul
-
-echo           Packages installed.
-
+:step2
 :: ============================================================================
-:: STEP 6: CREATE LAUNCHER AND SHORTCUTS
+:: STEP 2: Download FFmpeg
 :: ============================================================================
-
+cls
 echo.
-echo [Step 6/6] Creating shortcuts...
+echo   [93m[2/5][0m Downloading FFmpeg...
+echo.
 
-:: Create launcher script
+set "FFMPEG_DIR=%INSTALL_DIR%\ffmpeg"
+set "FFMPEG_EXE=%FFMPEG_DIR%\ffmpeg.exe"
+
+if exist "%FFMPEG_EXE%" (
+    echo   [92m✓[0m FFmpeg already installed
+    goto :step3
+)
+
+echo   [96m→[0m Downloading FFmpeg (for video processing)...
+
+:: Download FFmpeg essentials build
+set "FFMPEG_URL=https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+set "FFMPEG_ZIP=%INSTALL_DIR%\ffmpeg.zip"
+
+powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { (New-Object Net.WebClient).DownloadFile('%FFMPEG_URL%', '%FFMPEG_ZIP%') } catch { exit 1 }}" 2>nul
+
+if not exist "%FFMPEG_ZIP%" (
+    echo   [93m![0m FFmpeg download failed (optional, continuing...)
+    goto :step3
+)
+
+echo   [96m→[0m Extracting FFmpeg...
+mkdir "%FFMPEG_DIR%" 2>nul
+powershell -Command "Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%INSTALL_DIR%\ffmpeg_temp' -Force" 2>nul
+
+:: Move files from nested folder
+for /d %%i in ("%INSTALL_DIR%\ffmpeg_temp\ffmpeg-*") do (
+    xcopy "%%i\bin\*.*" "%FFMPEG_DIR%\" /Y /Q >nul 2>&1
+)
+rmdir /s /q "%INSTALL_DIR%\ffmpeg_temp" 2>nul
+del "%FFMPEG_ZIP%" 2>nul
+
+echo   [92m✓[0m FFmpeg installed successfully
+echo.
+
+:step3
+:: ============================================================================
+:: STEP 3: Install Python Dependencies
+:: ============================================================================
+cls
+echo.
+echo   [93m[3/5][0m Installing components...
+echo.
+
+set "PIP_EXE=%PYTHON_DIR%\Scripts\pip.exe"
+
+echo   [96m→[0m Installing customtkinter (GUI library)...
+"%PYTHON_EXE%" -m pip install customtkinter --no-warn-script-location -q 2>nul
+if errorlevel 1 (
+    echo   [93m![0m Retrying...
+    "%PYTHON_EXE%" -m pip install customtkinter --no-warn-script-location 2>nul
+)
+
+echo   [96m→[0m Installing yt-dlp (video downloader)...
+"%PYTHON_EXE%" -m pip install yt-dlp --no-warn-script-location -q 2>nul
+
+echo   [96m→[0m Installing Pillow (image processing)...
+"%PYTHON_EXE%" -m pip install Pillow --no-warn-script-location -q 2>nul
+
+echo   [92m✓[0m All components installed
+echo.
+
+:step4
+:: ============================================================================
+:: STEP 4: Download Application
+:: ============================================================================
+cls
+echo.
+echo   [93m[4/5][0m Downloading Flare Download...
+echo.
+
+set "APP_FILE=%INSTALL_DIR%\youtube_downloader.py"
+set "VERSION_FILE=%INSTALL_DIR%\version.py"
+
+set "GITHUB_RAW=https://raw.githubusercontent.com/contactmukundthiru-cyber/Multi-Platform-Downloader/main"
+
+echo   [96m→[0m Downloading application files...
+powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%GITHUB_RAW%/youtube_downloader.py', '%APP_FILE%')}" 2>nul
+powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%GITHUB_RAW%/version.py', '%VERSION_FILE%')}" 2>nul
+
+if not exist "%APP_FILE%" (
+    echo.
+    echo   [91m✗ Download failed.[0m
+    echo.
+    echo   Please check your internet connection and try again.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo   [92m✓[0m Application downloaded
+echo.
+
+:step5
+:: ============================================================================
+:: STEP 5: Create Shortcuts
+:: ============================================================================
+cls
+echo.
+echo   [93m[5/5][0m Creating shortcuts...
+echo.
+
+:: Create launcher batch file
+set "LAUNCHER=%INSTALL_DIR%\FlareDownload.bat"
 (
 echo @echo off
-echo setlocal
-echo set "PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%FFMPEG_DIR%;%NODEJS_DIR%;%%PATH%%"
 echo cd /d "%INSTALL_DIR%"
-echo start "" "%PYTHON_DIR%\pythonw.exe" youtube_downloader.py
-) > "%INSTALL_DIR%\FlareDownload.bat"
+echo set "PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%FFMPEG_DIR%;%%PATH%%"
+echo start "" "%PYTHON_EXE%" "%APP_FILE%"
+echo exit
+) > "%LAUNCHER%"
 
-:: Create VBS for silent launch
+:: Create VBS wrapper (hides command window)
+set "VBS_LAUNCHER=%INSTALL_DIR%\FlareDownload.vbs"
 (
-echo Set WshShell = CreateObject^("WScript.Shell"^)
-echo WshShell.Run """" ^& "%INSTALL_DIR%\FlareDownload.bat" ^& """", 0, False
+echo Set WshShell = CreateObject("WScript.Shell"^)
+echo WshShell.Run chr(34^) ^& "%LAUNCHER%" ^& chr(34^), 0
 echo Set WshShell = Nothing
-) > "%INSTALL_DIR%\FlareDownload.vbs"
+) > "%VBS_LAUNCHER%"
 
-:: Get Desktop path
-for /f "usebackq tokens=2*" %%a in (`reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v Desktop 2^>nul`) do set "DESKTOP=%%b"
-if not defined DESKTOP set "DESKTOP=%USERPROFILE%\Desktop"
+:: Create Desktop Shortcut using PowerShell
+echo   [96m→[0m Creating desktop shortcut...
+set "SHORTCUT=%DESKTOP%\Flare Download.lnk"
+powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '%VBS_LAUNCHER%'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'Premium Multi-Platform Video Downloader'; $s.Save()" 2>nul
 
-:: Create desktop shortcut
-set "SHORTCUT_VBS=%TEMP_DIR%\shortcut.vbs"
-(
-echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo Set oLink = oWS.CreateShortcut^("%DESKTOP%\Flare Download.lnk"^)
-echo oLink.TargetPath = "wscript.exe"
-echo oLink.Arguments = """%INSTALL_DIR%\FlareDownload.vbs"""
-echo oLink.WorkingDirectory = "%INSTALL_DIR%"
-echo oLink.Description = "Flare Download - Video Downloader"
-echo oLink.Save
-) > "%SHORTCUT_VBS%"
-cscript //nologo "%SHORTCUT_VBS%" 2>nul
-
-:: Create Start Menu shortcut
-set "STARTMENU=%APPDATA%\Microsoft\Windows\Start Menu\Programs"
-if exist "%STARTMENU%" (
-    (
-    echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-    echo Set oLink = oWS.CreateShortcut^("%STARTMENU%\Flare Download.lnk"^)
-    echo oLink.TargetPath = "wscript.exe"
-    echo oLink.Arguments = """%INSTALL_DIR%\FlareDownload.vbs"""
-    echo oLink.WorkingDirectory = "%INSTALL_DIR%"
-    echo oLink.Description = "Flare Download - Video Downloader"
-    echo oLink.Save
-    ) > "%TEMP_DIR%\startmenu.vbs"
-    cscript //nologo "%TEMP_DIR%\startmenu.vbs" 2>nul
-)
-
-:: Verify shortcuts
-if exist "%DESKTOP%\Flare Download.lnk" (
-    echo           Desktop shortcut created.
+if exist "%SHORTCUT%" (
+    echo   [92m✓[0m Desktop shortcut created
 ) else (
-    echo           [!] Desktop shortcut may need manual creation.
+    echo   [93m![0m Could not create desktop shortcut
 )
 
+:: Create Start Menu Shortcut
+echo   [96m→[0m Creating Start Menu shortcut...
+set "STARTMENU_SHORTCUT=%STARTMENU%\Flare Download.lnk"
+powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%STARTMENU_SHORTCUT%'); $s.TargetPath = '%VBS_LAUNCHER%'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Description = 'Premium Multi-Platform Video Downloader'; $s.Save()" 2>nul
+
+if exist "%STARTMENU_SHORTCUT%" (
+    echo   [92m✓[0m Start Menu shortcut created
+)
+
+echo.
+
 :: ============================================================================
-:: CLEANUP AND FINISH
+:: DONE!
 :: ============================================================================
+cls
+echo.
+echo   [92m ███████╗██╗      █████╗ ██████╗ ███████╗[0m
+echo   [92m ██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝[0m
+echo   [92m █████╗  ██║     ███████║██████╔╝█████╗  [0m
+echo   [92m ██╔══╝  ██║     ██╔══██║██╔══██╗██╔══╝  [0m
+echo   [92m ██║     ███████╗██║  ██║██║  ██║███████╗[0m
+echo   [92m ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝[0m
+echo.
+echo   [92m══════════════════════════════════════════════════════[0m
+echo.
+echo   [92m  ✓ INSTALLATION COMPLETE![0m
+echo.
+echo   [92m══════════════════════════════════════════════════════[0m
+echo.
+echo   [97mHow to use Flare Download:[0m
+echo.
+echo   [96m  1.[0m Double-click [93m"Flare Download"[0m on your Desktop
+echo.
+echo   [96m  2.[0m Paste a video URL (YouTube, TikTok, etc.)
+echo.
+echo   [96m  3.[0m Click [93mDOWNLOAD[0m
+echo.
+echo   [92m══════════════════════════════════════════════════════[0m
+echo.
+echo   Would you like to launch Flare Download now? (Y/N)
+echo.
+set /p LAUNCH="   > "
+if /i "%LAUNCH%"=="Y" (
+    start "" "%VBS_LAUNCHER%"
+)
 
-:: Clean up temp files
-rmdir /s /q "%TEMP_DIR%" 2>nul
-
 echo.
-echo  ============================================================
+echo   Thank you for installing Flare Download!
+echo   Part of the Flare ecosystem.
 echo.
-echo     INSTALLATION COMPLETE!
-echo.
-echo     Flare Download has been successfully installed.
-echo.
-echo     To start the application:
-echo       - Double-click "Flare Download" on your Desktop
-echo       - Or find it in the Start Menu
-echo.
-echo     What's included:
-echo       - Python 3.11 runtime
-echo       - Node.js runtime (for YouTube support)
-echo       - FFmpeg (for video processing)
-echo       - yt-dlp (video downloader engine)
-echo.
-echo     Installed to: %INSTALL_DIR%
-echo.
-echo  ============================================================
-echo.
-echo     Press any key to close this window...
-echo.
-
-pause >nul
-exit /b 0
+timeout /t 3 >nul
+exit

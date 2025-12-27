@@ -514,62 +514,46 @@ class FlareDownloadApp(ctk.CTk):
     def _build_header(self, parent):
         """Hero header with large title."""
         header = ctk.CTkFrame(parent, fg_color="transparent")
-        header.pack(fill="x", pady=(0, 50))
+        header.pack(fill="x", pady=(0, 40))
 
-        # Title container
-        title_frame = ctk.CTkFrame(header, fg_color="transparent")
-        title_frame.pack(anchor="w")
+        # Title row
+        title_row = ctk.CTkFrame(header, fg_color="transparent")
+        title_row.pack(anchor="w")
 
-        # FLARE - Large display font
+        # FLARE - Large display font with letter spacing effect
         title = ctk.CTkLabel(
-            title_frame,
-            text="FLARE",
-            font=ctk.CTkFont(family="Arial Black", size=72, weight="bold"),
+            title_row,
+            text="F L A R E",
+            font=ctk.CTkFont(family="Arial Black", size=56, weight="bold"),
             text_color=Flare.WHITE
         )
         title.pack(side="left")
 
-        # Animated fire accent dot
-        dot_frame = ctk.CTkFrame(title_frame, fg_color="transparent", width=20, height=72)
-        dot_frame.pack(side="left", padx=(15, 15))
-        dot_frame.pack_propagate(False)
-
-        self.fire_dot = ctk.CTkFrame(
-            dot_frame,
-            fg_color=Flare.FIRE,
-            width=12, height=12,
-            corner_radius=6
-        )
-        self.fire_dot.place(relx=0.5, rely=0.5, anchor="center")
-        self._animate_fire_dot()
-
-        # DOWNLOAD subtitle
+        # DOWNLOAD - Next to title
         subtitle = ctk.CTkLabel(
-            title_frame,
-            text="DOWNLOAD",
-            font=ctk.CTkFont(family="Arial", size=16, weight="bold"),
-            text_color=Flare.GRAY
+            title_row,
+            text="D O W N L O A D",
+            font=ctk.CTkFont(family="Arial", size=14, weight="bold"),
+            text_color=Flare.FIRE
         )
-        subtitle.pack(side="left", pady=(30, 0))
+        subtitle.pack(side="left", padx=(25, 0), pady=(20, 0))
 
-        # Version badge
-        version_frame = ctk.CTkFrame(header, fg_color=Flare.SURFACE_1, corner_radius=4)
-        version_frame.pack(anchor="e", pady=(10, 0))
-
-        ctk.CTkLabel(
-            version_frame,
-            text=f"  v{__version__}  ",
-            font=ctk.CTkFont(family="Consolas", size=11),
+        # Version badge - inline
+        version_label = ctk.CTkLabel(
+            title_row,
+            text=f"v{__version__}",
+            font=ctk.CTkFont(family="Consolas", size=10),
             text_color=Flare.GRAY_DIM
-        ).pack(padx=8, pady=4)
+        )
+        version_label.pack(side="left", padx=(15, 0), pady=(22, 0))
 
         # Tagline
         ctk.CTkLabel(
             header,
-            text="Download from YouTube, TikTok, Instagram, Twitter & 1000+ sites",
-            font=ctk.CTkFont(size=13),
-            text_color=Flare.GRAY
-        ).pack(anchor="w", pady=(20, 0))
+            text="YouTube  •  TikTok  •  Instagram  •  Twitter  •  1000+ sites",
+            font=ctk.CTkFont(size=12),
+            text_color=Flare.GRAY_DIM
+        ).pack(anchor="w", pady=(15, 0))
 
     def _animate_fire_dot(self):
         """Pulsing fire dot animation."""
@@ -598,69 +582,86 @@ class FlareDownloadApp(ctk.CTk):
         self.after(50, self._animate_fire_dot)
 
     def _build_url_section(self, parent):
-        """URL input with corner accents."""
+        """URL input - prominent and clear."""
         section = ctk.CTkFrame(parent, fg_color="transparent")
-        section.pack(fill="x", pady=(0, 30))
+        section.pack(fill="x", pady=(0, 25))
 
-        # Label
-        label_frame = ctk.CTkFrame(section, fg_color="transparent")
-        label_frame.pack(fill="x", pady=(0, 12))
+        # Label row
+        label_row = ctk.CTkFrame(section, fg_color="transparent")
+        label_row.pack(fill="x", pady=(0, 10))
 
-        # Fire bar accent
+        # Fire accent bar
         ctk.CTkFrame(
-            label_frame, fg_color=Flare.FIRE,
-            width=3, height=14, corner_radius=0
-        ).pack(side="left", padx=(0, 10))
+            label_row, fg_color=Flare.FIRE,
+            width=4, height=16, corner_radius=0
+        ).pack(side="left", padx=(0, 12))
 
         ctk.CTkLabel(
-            label_frame,
-            text="VIDEO URL",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=Flare.WHITE_DIM
+            label_row,
+            text="PASTE VIDEO URL",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=Flare.WHITE
         ).pack(side="left")
 
-        # Input container with corner accents
-        input_container = ctk.CTkFrame(section, fg_color="transparent")
-        input_container.pack(fill="x")
-
-        # The actual input
-        self.url_entry = ctk.CTkEntry(
-            input_container,
-            textvariable=self.url_var,
-            placeholder_text="Paste video URL here...",
-            height=60,
-            corner_radius=0,
+        # URL Input Box - prominent with glow effect
+        input_frame = ctk.CTkFrame(
+            section,
+            fg_color=Flare.SURFACE_2,
+            corner_radius=8,
             border_width=2,
-            border_color=Flare.BORDER,
+            border_color=Flare.FIRE_CRIMSON
+        )
+        input_frame.pack(fill="x", ipady=5)
+
+        # The URL entry
+        self.url_entry = ctk.CTkEntry(
+            input_frame,
+            textvariable=self.url_var,
+            placeholder_text="https://youtube.com/watch?v=... or any video URL",
+            height=50,
+            corner_radius=6,
+            border_width=0,
             fg_color=Flare.SURFACE_1,
             text_color=Flare.WHITE,
-            placeholder_text_color=Flare.GRAY_DIM,
-            font=ctk.CTkFont(size=15)
+            placeholder_text_color=Flare.GRAY,
+            font=ctk.CTkFont(size=14)
         )
-        self.url_entry.pack(fill="x")
-
-        # Corner accents overlay
-        self._add_corner_accents(input_container)
+        self.url_entry.pack(fill="x", padx=8, pady=8)
 
         # Focus effects
         self.url_entry.bind("<FocusIn>", lambda e: self._on_url_focus(True))
         self.url_entry.bind("<FocusOut>", lambda e: self._on_url_focus(False))
 
-        # Action buttons
-        btn_frame = ctk.CTkFrame(section, fg_color="transparent")
-        btn_frame.pack(fill="x", pady=(15, 0))
+        # Allow Ctrl+V directly in the entry
+        self.url_entry.bind("<Control-v>", self._paste_to_entry)
+        self.url_entry.bind("<Control-V>", self._paste_to_entry)
 
-        for text, cmd in [("PASTE", self._paste_url), ("CLEAR", self._clear_url)]:
-            btn = ctk.CTkButton(
-                btn_frame, text=text, command=cmd,
-                width=80, height=32, corner_radius=0,
-                fg_color="transparent",
-                hover_color=Flare.SURFACE_2,
-                border_width=1, border_color=Flare.BORDER,
-                text_color=Flare.GRAY,
-                font=ctk.CTkFont(size=10, weight="bold")
-            )
-            btn.pack(side="left", padx=(0, 10))
+        # Action buttons row
+        btn_frame = ctk.CTkFrame(section, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(12, 0))
+
+        # Paste button - more prominent
+        paste_btn = ctk.CTkButton(
+            btn_frame, text="📋 PASTE URL", command=self._paste_url,
+            width=120, height=36, corner_radius=4,
+            fg_color=Flare.FIRE_CRIMSON,
+            hover_color=Flare.FIRE,
+            text_color=Flare.WHITE,
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        paste_btn.pack(side="left", padx=(0, 10))
+
+        # Clear button
+        clear_btn = ctk.CTkButton(
+            btn_frame, text="✕ CLEAR", command=self._clear_url,
+            width=80, height=36, corner_radius=4,
+            fg_color="transparent",
+            hover_color=Flare.SURFACE_2,
+            border_width=1, border_color=Flare.BORDER,
+            text_color=Flare.GRAY,
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        clear_btn.pack(side="left")
 
     def _add_corner_accents(self, container):
         """Add L-shaped corner accents to container."""
@@ -1076,88 +1077,114 @@ class FlareDownloadApp(ctk.CTk):
     # =========================================================================
     # ACTIONS
     # =========================================================================
-    def _paste_url(self):
-        """Paste URL from clipboard with multiple fallback methods."""
-        url = None
-
-        # Method 1: Try tkinter clipboard
+    def _paste_to_entry(self, event=None):
+        """Handle Ctrl+V in the URL entry field - let default work or use fallback."""
         try:
-            url = self.clipboard_get()
-        except TclError:
+            # Try to get clipboard and insert at cursor
+            text = self._get_clipboard_text()
+            if text:
+                # Clear selection if any
+                try:
+                    self.url_entry.delete("sel.first", "sel.last")
+                except:
+                    pass
+                # Insert at cursor or replace all if empty
+                if not self.url_var.get().strip():
+                    self.url_var.set(text)
+                else:
+                    self.url_entry.insert("insert", text)
+                return "break"  # Prevent default handling
+        except:
             pass
-        except Exception:
-            pass
+        return None  # Let default handling proceed
 
-        # Method 2: Try pyperclip if available
-        if not url:
+    def _get_clipboard_text(self):
+        """Get text from clipboard using multiple methods."""
+        # Method 1: Windows win32clipboard (most reliable on Windows)
+        if sys.platform == 'win32':
             try:
-                import pyperclip
-                url = pyperclip.paste()
+                import ctypes
+                from ctypes import wintypes
+
+                CF_UNICODETEXT = 13
+                user32 = ctypes.windll.user32
+                kernel32 = ctypes.windll.kernel32
+
+                user32.OpenClipboard(0)
+                try:
+                    if user32.IsClipboardFormatAvailable(CF_UNICODETEXT):
+                        data = user32.GetClipboardData(CF_UNICODETEXT)
+                        if data:
+                            kernel32.GlobalLock.restype = ctypes.c_void_p
+                            data_locked = kernel32.GlobalLock(data)
+                            if data_locked:
+                                text = ctypes.c_wchar_p(data_locked).value
+                                kernel32.GlobalUnlock(data)
+                                if text:
+                                    return text.strip()
+                finally:
+                    user32.CloseClipboard()
             except:
                 pass
 
-        # Method 3: Windows PowerShell fallback
-        if not url and sys.platform == 'win32':
+        # Method 2: Try tkinter clipboard
+        try:
+            text = self.clipboard_get()
+            if text:
+                return text.strip()
+        except:
+            pass
+
+        # Method 3: PowerShell fallback for Windows
+        if sys.platform == 'win32':
             try:
                 result = subprocess.run(
                     ['powershell', '-command', 'Get-Clipboard'],
                     capture_output=True, text=True, timeout=3,
                     creationflags=subprocess.CREATE_NO_WINDOW
                 )
-                if result.returncode == 0:
-                    url = result.stdout.strip()
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
             except:
                 pass
 
-        # Method 4: Windows clip.exe fallback
-        if not url and sys.platform == 'win32':
-            try:
-                result = subprocess.run(
-                    ['powershell', '-command', '[Console]::OutputEncoding = [Text.Encoding]::UTF8; Get-Clipboard'],
-                    capture_output=True, text=True, timeout=3,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-                if result.returncode == 0:
-                    url = result.stdout.strip()
-            except:
-                pass
-
-        # Method 5: Linux xclip/xsel fallback
-        if not url and sys.platform.startswith('linux'):
+        # Method 4: Linux xclip/xsel
+        if sys.platform.startswith('linux'):
             for cmd in [['xclip', '-selection', 'clipboard', '-o'], ['xsel', '--clipboard', '--output']]:
                 try:
                     result = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
-                    if result.returncode == 0:
-                        url = result.stdout.strip()
-                        break
+                    if result.returncode == 0 and result.stdout.strip():
+                        return result.stdout.strip()
                 except:
                     pass
 
-        # Method 6: macOS pbpaste fallback
-        if not url and sys.platform == 'darwin':
+        # Method 5: macOS pbpaste
+        if sys.platform == 'darwin':
             try:
                 result = subprocess.run(['pbpaste'], capture_output=True, text=True, timeout=2)
-                if result.returncode == 0:
-                    url = result.stdout.strip()
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
             except:
                 pass
 
-        # Process the URL
-        if url and url.strip():
-            url = url.strip()
+        return None
+
+    def _paste_url(self):
+        """Paste URL from clipboard."""
+        url = self._get_clipboard_text()
+
+        if url:
             self.url_var.set(url)
-            self._log("URL pasted from clipboard")
-            self._animate_url_drop()
+            self._log("URL pasted")
+            # Focus the entry
+            self.url_entry.focus_set()
         else:
-            self._log("Clipboard is empty or inaccessible", error=True)
-            # Show helpful message
+            self._log("Could not read clipboard", error=True)
             messagebox.showinfo(
-                "Paste Help",
+                "Paste",
                 "Could not access clipboard.\n\n"
-                "Try:\n"
-                "1. Copy a URL first (Ctrl+C)\n"
-                "2. Click in the URL field and press Ctrl+V\n"
-                "3. Or type/paste the URL manually"
+                "Try clicking in the URL box and pressing Ctrl+V,\n"
+                "or type/paste the URL manually."
             )
 
     def _clear_url(self):

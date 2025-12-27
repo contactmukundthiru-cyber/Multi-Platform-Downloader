@@ -781,15 +781,31 @@ class FlareDownloader(ctk.CTk):
             # Build output template
             output_template = os.path.join(output_dir, "%(title)s.%(ext)s")
 
+            # Find yt-dlp executable
+            if os.name == 'nt':
+                # Windows: check bundled location first
+                install_dir = os.path.dirname(os.path.abspath(__file__))
+                bundled_ytdlp = os.path.join(install_dir, "python", "Scripts", "yt-dlp.exe")
+                ytdlp_cmd = bundled_ytdlp if os.path.exists(bundled_ytdlp) else "yt-dlp"
+            else:
+                ytdlp_cmd = "yt-dlp"
+
             # Build yt-dlp command
             cmd = [
-                "yt-dlp",
+                ytdlp_cmd,
                 "--newline",
                 "--progress",
                 "--no-warnings",
                 "--no-playlist",
                 "--restrict-filenames",
             ]
+
+            # Add Node.js path for YouTube support (Windows bundled)
+            if os.name == 'nt':
+                install_dir = os.path.dirname(os.path.abspath(__file__))
+                node_path = os.path.join(install_dir, "node", "node.exe")
+                if os.path.exists(node_path):
+                    cmd.extend(["--extractor-args", f"youtube:player_client=web"])
 
             if is_audio:
                 # Audio extraction
@@ -815,6 +831,19 @@ class FlareDownloader(ctk.CTk):
 
             cmd.extend(["-o", output_template, url])
 
+            # Set up environment with bundled tools
+            env = os.environ.copy()
+            if os.name == 'nt':
+                install_dir = os.path.dirname(os.path.abspath(__file__))
+                extra_paths = [
+                    os.path.join(install_dir, "python"),
+                    os.path.join(install_dir, "python", "Scripts"),
+                    os.path.join(install_dir, "ffmpeg"),
+                    os.path.join(install_dir, "node"),
+                ]
+                existing_path = env.get("PATH", "")
+                env["PATH"] = ";".join(extra_paths) + ";" + existing_path
+
             # Run yt-dlp
             self.process = subprocess.Popen(
                 cmd,
@@ -822,6 +851,7 @@ class FlareDownloader(ctk.CTk):
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
                 bufsize=1,
+                env=env,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
 

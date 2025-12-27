@@ -36,7 +36,7 @@ from typing import Optional
 try:
     from version import __version__, GITHUB_REPO
 except ImportError:
-    __version__ = "2.8.1"
+    __version__ = "2.8.2"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
 
 try:
@@ -460,32 +460,68 @@ class FlareDownloadApp(ctk.CTk):
         quality = self.quality_var.get()
         is_audio = self.media_type.get() == "Audio"
 
-        cmd = ["yt-dlp", "--no-playlist", "-o", f"{output_dir}/%(title)s.%(ext)s"]
+        # Base command with reliability options
+        cmd = [
+            "yt-dlp",
+            "--no-playlist",
+            "--newline",  # Better progress parsing
+            "--no-warnings",
+            "--socket-timeout", "30",
+            "--retries", "3",
+            "--fragment-retries", "3",
+            "-o", f"{output_dir}/%(title)s.%(ext)s"
+        ]
 
         if is_audio:
+            # Audio extraction
             cmd.extend(["-x", "--audio-format", fmt])
-            if quality != "Best":
-                cmd.extend(["--audio-quality", quality.replace("k", "")])
-        else:
+            # Audio quality: 0=best, 9=worst for VBR
             if quality == "Best":
-                cmd.extend(["-f", "bestvideo+bestaudio/best"])
+                cmd.extend(["--audio-quality", "0"])
+            elif quality == "320k":
+                cmd.extend(["--audio-quality", "0"])
+            elif quality == "256k":
+                cmd.extend(["--audio-quality", "2"])
+            elif quality == "192k":
+                cmd.extend(["--audio-quality", "4"])
+            elif quality == "128k":
+                cmd.extend(["--audio-quality", "6"])
+            else:
+                cmd.extend(["--audio-quality", "5"])
+        else:
+            # Video format - use flexible fallback chain
+            if quality == "Best":
+                # Best quality with fallbacks
+                cmd.extend(["-f", "bv*+ba/b"])
             else:
                 height = quality.replace("p", "")
-                cmd.extend(["-f", f"bestvideo[height<={height}]+bestaudio/best[height<={height}]"])
-            cmd.extend(["--merge-output-format", fmt])
+                # Flexible format: try height limit, fall back to best available
+                cmd.extend(["-f", f"bv*[height<={height}]+ba/b[height<={height}]/bv*+ba/b"])
+
+            # Only set merge format for formats that need it
+            if fmt in ["mp4", "mkv", "webm"]:
+                cmd.extend(["--merge-output-format", fmt])
+            elif fmt == "mov":
+                cmd.extend(["--merge-output-format", "mp4", "--recode-video", "mov"])
+            elif fmt == "avi":
+                cmd.extend(["--merge-output-format", "mp4", "--recode-video", "avi"])
 
         cmd.append(url)
-        self._log(f"Downloading: {url[:50]}...")
+        self._log(f"Downloading: {url[:60]}...")
 
         try:
+            creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0) if sys.platform == 'win32' else 0
             self.process = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+                creationflags=creationflags
             )
 
             for line in self.process.stdout:
+                if not self.is_downloading:
+                    break
                 line = line.strip()
                 if line:
+                    # Parse progress
                     if "[download]" in line and "%" in line:
                         try:
                             pct = float(line.split("%")[0].split()[-1])
@@ -493,6 +529,8 @@ class FlareDownloadApp(ctk.CTk):
                             self.after(0, lambda l=line: self.status_label.configure(text=l[:55]))
                         except:
                             pass
+                    elif "[Merger]" in line or "[ExtractAudio]" in line:
+                        self.after(0, lambda: self.status_label.configure(text="Processing..."))
                     self.after(0, lambda l=line: self._log(l))
 
             self.process.wait()
@@ -500,7 +538,7 @@ class FlareDownloadApp(ctk.CTk):
             if self.process.returncode == 0:
                 self.after(0, lambda: self._download_complete(True))
             else:
-                self.after(0, lambda: self._download_complete(False, "Download failed"))
+                self.after(0, lambda: self._download_complete(False, "Download failed - check log"))
 
         except Exception as e:
             self.after(0, lambda: self._download_complete(False, str(e)))

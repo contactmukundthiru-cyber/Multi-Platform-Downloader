@@ -16,7 +16,7 @@
 ; ============================================================================
 
 #define MyAppName "Flare Download"
-#define MyAppVersion "2.6.2"
+#define MyAppVersion "2.6.3"
 #define MyAppPublisher "Mukund Thiru"
 #define MyAppURL "https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader"
 #define MyAppExeName "Flare Download.exe"
@@ -44,11 +44,8 @@ SetupIconFile=icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 
-; Appearance - Modern dark themed installer
+; Appearance
 WizardStyle=modern
-WizardSizePercent=100
-WizardImageFile=compiler:WizModernImage.bmp
-WizardSmallImageFile=compiler:WizModernSmallImage.bmp
 
 ; Privileges (don't require admin)
 PrivilegesRequired=lowest
@@ -79,8 +76,8 @@ VersionInfoProductVersion={#MyAppVersion}
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
-Name: "startmenuicon"; Description: "Create a Start Menu shortcut"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "startmenuicon"; Description: "Create a Start Menu shortcut"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; Main executable (built with PyInstaller)

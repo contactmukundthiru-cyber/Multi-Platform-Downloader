@@ -1,26 +1,27 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: NeonTube Multi-Platform Video Downloader - Windows Installer
+:: Flare Download - Multi-Platform Video Downloader - Windows Installer
+:: Part of the Flare ecosystem
 :: https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader
 
-title NeonTube Installer
+title Flare Download Installer
 
 echo.
-echo   _   _                  _____      _
-echo  ^| \ ^| ^|                ^|_   _^|    ^| ^|
-echo  ^|  \^| ^| ___  ___  _ __   ^| ^|_   _^| ^|__   ___
-echo  ^| . ` ^|/ _ \/ _ \^| '_ \  ^| ^| ^| ^| ^| '_ \ / _ \
-echo  ^| ^|\  ^|  __/ (_) ^| ^| ^| ^| ^| ^| ^|_^| ^| ^|_) ^|  __/
-echo  ^|_^| \_^|\___^|\___/^|_^| ^|_^| \_/\__,_^|_.__/ \___^|
+echo  ______ _
+echo ^|  ____^| ^|
+echo ^| ^|__  ^| ^| __ _ _ __ ___
+echo ^|  __^| ^| ^|/ _` ^| '__/ _ \
+echo ^| ^|    ^| ^| (_^| ^| ^|  __/
+echo ^|_^|    ^|_^|\__,_^|_^|  \___^|
 echo.
-echo  Multi-Platform Video Downloader
+echo  DOWNLOAD - Multi-Platform Video Downloader
 echo  YouTube ^| TikTok ^| Instagram ^| Twitter ^| 1000+ sites
 echo.
 echo ============================================================
 
 :: Set install directory
-set "INSTALL_DIR=%LOCALAPPDATA%\NeonTube"
+set "INSTALL_DIR=%LOCALAPPDATA%\FlareDownload"
 
 :: Check Python
 echo [1/5] Checking Python...
@@ -80,14 +81,14 @@ echo @echo off
 echo cd /d "%INSTALL_DIR%"
 echo call venv\Scripts\activate.bat
 echo pythonw youtube_downloader.py
-) > "%INSTALL_DIR%\NeonTube.bat"
+) > "%INSTALL_DIR%\FlareDownload.bat"
 
 :: Create VBS for silent launch
 (
 echo Set WshShell = CreateObject^("WScript.Shell"^)
-echo WshShell.Run chr^(34^) ^& "%INSTALL_DIR%\NeonTube.bat" ^& chr^(34^), 0
+echo WshShell.Run chr^(34^) ^& "%INSTALL_DIR%\FlareDownload.bat" ^& chr^(34^), 0
 echo Set WshShell = Nothing
-) > "%INSTALL_DIR%\NeonTube.vbs"
+) > "%INSTALL_DIR%\FlareDownload.vbs"
 
 :: Create desktop shortcut (multiple methods for compatibility)
 echo       Creating desktop shortcut...
@@ -103,12 +104,12 @@ if not defined DESKTOP_PATH (
 :: Create shortcut using VBScript (more reliable than PowerShell)
 (
 echo Set oWS = WScript.CreateObject^("WScript.Shell"^)
-echo sLinkFile = "%DESKTOP_PATH%\NeonTube.lnk"
+echo sLinkFile = "%DESKTOP_PATH%\Flare Download.lnk"
 echo Set oLink = oWS.CreateShortcut^(sLinkFile^)
 echo oLink.TargetPath = "wscript.exe"
-echo oLink.Arguments = """%INSTALL_DIR%\NeonTube.vbs"""
+echo oLink.Arguments = """%INSTALL_DIR%\FlareDownload.vbs"""
 echo oLink.WorkingDirectory = "%INSTALL_DIR%"
-echo oLink.Description = "Multi-Platform Video Downloader"
+echo oLink.Description = "Flare Download - Multi-Platform Video Downloader"
 echo oLink.Save
 ) > "%INSTALL_DIR%\CreateShortcut.vbs"
 
@@ -116,11 +117,11 @@ cscript //nologo "%INSTALL_DIR%\CreateShortcut.vbs" 2>nul
 del "%INSTALL_DIR%\CreateShortcut.vbs" 2>nul
 
 :: Verify shortcut was created
-if exist "%DESKTOP_PATH%\NeonTube.lnk" (
+if exist "%DESKTOP_PATH%\Flare Download.lnk" (
     echo       [OK] Desktop shortcut created
 ) else (
     echo       [WARN] Could not create desktop shortcut
-    echo       You can run: %INSTALL_DIR%\NeonTube.bat
+    echo       You can run: %INSTALL_DIR%\FlareDownload.bat
 )
 
 echo.
@@ -128,11 +129,13 @@ echo ============================================================
 echo.
 echo  INSTALLATION COMPLETE!
 echo.
-echo  To run NeonTube:
+echo  To run Flare Download:
 echo    - Double-click the desktop shortcut
-echo    - Or run: %INSTALL_DIR%\NeonTube.bat
+echo    - Or run: %INSTALL_DIR%\FlareDownload.bat
 echo.
 echo  Supports: YouTube, TikTok, Instagram, Twitter, and 1000+ more!
+echo.
+echo  Part of the Flare ecosystem
 echo.
 echo ============================================================
 echo.

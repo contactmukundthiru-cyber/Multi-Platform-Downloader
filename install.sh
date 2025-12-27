@@ -1,42 +1,43 @@
 #!/bin/bash
 
-# NeonTube Multi-Platform Video Downloader - Installation Script
+# Flare Download - Multi-Platform Video Downloader - Installation Script
+# Part of the Flare ecosystem
 # https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader
 
 set -e
 
-# Colors
-CYAN='\033[0;36m'
+# Colors - Flare fire theme
+ORANGE='\033[0;33m'
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-PURPLE='\033[0;35m'
 NC='\033[0m'
 BOLD='\033[1m'
 
 # Banner
-echo -e "${CYAN}"
-echo "  _   _                  _____      _          "
-echo " | \ | |                |_   _|    | |         "
-echo " |  \| | ___  ___  _ __   | |_   _| |__   ___ "
-echo " | . \` |/ _ \/ _ \| '_ \  | | | | | '_ \ / _ \\"
-echo " | |\  |  __/ (_) | | | | | | |_| | |_) |  __/"
-echo " |_| \_|\___|\___/|_| |_| \_/\__,_|_.__/ \___|"
+echo -e "${RED}"
+echo "  ______ _                  "
+echo " |  ____| |                 "
+echo " | |__  | | __ _ _ __ ___   "
+echo " |  __| | |/ _\` | '__/ _ \  "
+echo " | |    | | (_| | | |  __/  "
+echo " |_|    |_|\__,_|_|  \___|  "
 echo -e "${NC}"
-echo -e "${BOLD}Multi-Platform Video Downloader${NC}"
-echo -e "${PURPLE}YouTube | TikTok | Instagram | Twitter | 1000+ sites${NC}"
+echo -e "${ORANGE}${BOLD}DOWNLOAD${NC}"
+echo -e "${YELLOW}Multi-Platform Video Downloader${NC}"
+echo -e "YouTube | TikTok | Instagram | Twitter | 1000+ sites"
 echo ""
 
 # Determine install directory
 if [ -n "$1" ]; then
     INSTALL_DIR="$1"
 else
-    INSTALL_DIR="$HOME/.local/share/neontube"
+    INSTALL_DIR="$HOME/.local/share/flare-download"
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 
-echo -e "${YELLOW}[1/5]${NC} Checking Python installation..."
+echo -e "${ORANGE}[1/5]${NC} Checking Python installation..."
 if command -v python3 &> /dev/null; then
     PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
     echo -e "      ${GREEN}Python $PYTHON_VERSION found${NC}"
@@ -57,13 +58,13 @@ fi
 
 # Create installation directory
 echo ""
-echo -e "${YELLOW}[2/5]${NC} Creating installation directory..."
+echo -e "${ORANGE}[2/5]${NC} Creating installation directory..."
 mkdir -p "$INSTALL_DIR"
 echo -e "      ${GREEN}Directory: $INSTALL_DIR${NC}"
 
 # Copy or download files
 echo ""
-echo -e "${YELLOW}[3/5]${NC} Installing application files..."
+echo -e "${ORANGE}[3/5]${NC} Installing application files..."
 
 # If running from source directory
 if [ -f "$SCRIPT_DIR/youtube_downloader.py" ]; then
@@ -86,7 +87,7 @@ fi
 
 # Create virtual environment
 echo ""
-echo -e "${YELLOW}[4/5]${NC} Setting up Python environment..."
+echo -e "${ORANGE}[4/5]${NC} Setting up Python environment..."
 if [ -d "$INSTALL_DIR/venv" ]; then
     echo "      Removing old virtual environment..."
     rm -rf "$INSTALL_DIR/venv"
@@ -103,9 +104,9 @@ echo -e "      ${GREEN}Dependencies installed${NC}"
 
 # Create launcher
 echo ""
-echo -e "${YELLOW}[5/5]${NC} Creating launcher..."
+echo -e "${ORANGE}[5/5]${NC} Creating launcher..."
 
-cat > "$INSTALL_DIR/neontube" << 'LAUNCHER'
+cat > "$INSTALL_DIR/flare-download" << 'LAUNCHER'
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -113,42 +114,42 @@ source venv/bin/activate
 python3 youtube_downloader.py "$@"
 LAUNCHER
 
-chmod +x "$INSTALL_DIR/neontube"
+chmod +x "$INSTALL_DIR/flare-download"
 
 # Create symlink in ~/.local/bin
 mkdir -p "$HOME/.local/bin"
-ln -sf "$INSTALL_DIR/neontube" "$HOME/.local/bin/neontube"
+ln -sf "$INSTALL_DIR/flare-download" "$HOME/.local/bin/flare-download"
 
 # Create desktop entry
 if [ -d "$HOME/.local/share/applications" ]; then
-    cat > "$HOME/.local/share/applications/neontube.desktop" << EOF
+    cat > "$HOME/.local/share/applications/flare-download.desktop" << EOF
 [Desktop Entry]
-Name=NeonTube
+Name=Flare Download
 Comment=Multi-Platform Video Downloader
-Exec=$INSTALL_DIR/neontube
+Exec=$INSTALL_DIR/flare-download
 Icon=video-x-generic
 Terminal=false
 Type=Application
 Categories=Network;AudioVideo;
-Keywords=youtube;tiktok;instagram;video;download;
+Keywords=youtube;tiktok;instagram;video;download;flare;
 EOF
     echo -e "      ${GREEN}Desktop entry created${NC}"
 fi
 
 # Create desktop shortcut
 if [ -d "$HOME/Desktop" ]; then
-    cp "$HOME/.local/share/applications/neontube.desktop" "$HOME/Desktop/" 2>/dev/null || true
-    chmod +x "$HOME/Desktop/neontube.desktop" 2>/dev/null || true
+    cp "$HOME/.local/share/applications/flare-download.desktop" "$HOME/Desktop/" 2>/dev/null || true
+    chmod +x "$HOME/Desktop/flare-download.desktop" 2>/dev/null || true
 fi
 
 echo ""
 echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
 echo ""
-echo -e "To run NeonTube:"
-echo -e "  ${CYAN}neontube${NC}                    (if ~/.local/bin is in PATH)"
-echo -e "  ${CYAN}$INSTALL_DIR/neontube${NC}"
+echo -e "To run Flare Download:"
+echo -e "  ${ORANGE}flare-download${NC}                    (if ~/.local/bin is in PATH)"
+echo -e "  ${ORANGE}$INSTALL_DIR/flare-download${NC}"
 echo ""
-echo -e "Or find ${BOLD}NeonTube${NC} in your applications menu."
+echo -e "Or find ${BOLD}Flare Download${NC} in your applications menu."
 echo ""
-echo -e "${PURPLE}Supports: YouTube, TikTok, Instagram, Twitter, and 1000+ more sites!${NC}"
+echo -e "${RED}Part of the Flare ecosystem${NC}"
 echo ""

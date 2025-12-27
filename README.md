@@ -1,45 +1,37 @@
-# NeonTube - Multi-Platform Video Downloader
+# Flare Download - Multi-Platform Video Downloader
 
-A futuristic video downloader with a stunning dark-themed UI. Download from YouTube, TikTok, Instagram, Twitter, and 1000+ other sites.
+Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram, Twitter, and 1000+ other sites.
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
-![Python](https://img.shields.io/badge/python-3.8+-green)
-![License](https://img.shields.io/badge/license-MIT-purple)
+![Version](https://img.shields.io/badge/version-2.2.0-ff4500)
+![Python](https://img.shields.io/badge/python-3.8+-ff6b35)
+![License](https://img.shields.io/badge/license-MIT-ff8c00)
 
 ## Supported Platforms
 
 | Platform | Videos | Audio | Stories/Reels |
 |----------|--------|-------|---------------|
-| YouTube | Yes | Yes | Yes (Shorts) |
-| TikTok | Yes | Yes | Yes |
-| Instagram | Yes | Yes | Yes |
-| Twitter/X | Yes | Yes | Yes |
-| Facebook | Yes | Yes | Yes |
-| Vimeo | Yes | Yes | - |
-| Reddit | Yes | Yes | - |
-| Twitch | Yes | Yes | Clips |
-| SoundCloud | - | Yes | - |
-| Spotify | - | Yes | - |
-| **+ 1000 more sites** | | | |
+| YouTube | ✓ | ✓ | ✓ (Shorts) |
+| TikTok | ✓ | ✓ | ✓ |
+| Instagram | ✓ | ✓ | ✓ |
+| Twitter/X | ✓ | ✓ | ✓ |
+| Facebook | ✓ | ✓ | ✓ |
+| Vimeo | ✓ | ✓ | - |
+| Reddit | ✓ | ✓ | - |
+| Twitch | ✓ | ✓ | Clips |
+| SoundCloud | - | ✓ | - |
+| Spotify | - | ✓ | - |
+| **+ 1000 more** | | | |
 
 ## Features
 
-### Core Features
 - **Multi-Platform**: Download from 1000+ websites
-- **Futuristic UI**: Dark theme with neon cyan/purple accents
+- **Fire-themed UI**: Dark theme with ember/flame accents
 - **Video Formats**: MP4, WebM, MKV, AVI, MOV
 - **Audio Formats**: MP3, WAV, M4A, FLAC, AAC, Opus, OGG
 - **Quality Options**: 8K, 4K, 2K, 1080p, 720p, 480p, 360p, 240p, 144p
 - **Audio Bitrates**: 320, 256, 192, 128, 96, 64 kbps
-
-### Advanced Features
 - **Auto-Update**: Built-in update checker
-- **Video Info Preview**: See details before downloading
-- **Subtitle Download**: Auto-download subtitles
-- **Thumbnail Download**: Save video thumbnails
-- **Metadata Embedding**: Embed title, artist, album info
-- **Cancel Downloads**: Stop downloads in progress
-- **Real-time Progress**: Speed, ETA, and percentage display
+- **Subtitles & Thumbnails**: Download extras
 
 ## Quick Install
 
@@ -49,9 +41,9 @@ curl -sSL https://raw.githubusercontent.com/contactmukundthiru-cyber/Multi-Platf
 ```
 
 ### Windows
-1. Download the latest release
-2. Run `install.bat`
-3. Double-click `NeonTube.bat` to launch
+1. Download the ZIP from GitHub
+2. Extract and run `install.bat`
+3. Use the desktop shortcut
 
 ### Manual Installation
 ```bash
@@ -63,79 +55,27 @@ pip install -r requirements.txt
 python youtube_downloader.py
 ```
 
-### GUI Installer
-```bash
-python installer_gui.py
-```
-
 ## Requirements
 
 - Python 3.8+
 - FFmpeg (optional, for video merging)
 
-### Installing FFmpeg
-
-**Linux:**
-```bash
-sudo apt install ffmpeg
-```
-
-**macOS:**
-```bash
-brew install ffmpeg
-```
-
-**Windows:**
-Download from https://ffmpeg.org/download.html
-
 ## Usage
 
-1. Launch NeonTube
-2. Paste any video URL (YouTube, TikTok, Instagram, etc.)
-3. Select Media Type (Video/Audio)
+1. Launch Flare Download
+2. Paste any video URL
+3. Select Video or Audio
 4. Choose Format and Quality
 5. Click **DOWNLOAD**
 
-## Screenshots
+## Part of Flare
 
-The application features:
-- Glowing neon title animation
-- Multi-platform support indicator
-- Video/Audio toggle with format options
-- Advanced options panel
-- Real-time download progress with speed/ETA
-- Console-style log viewer
-
-## Building Releases
-
-```bash
-python build_release.py
-```
-
-This creates:
-- `dist/NeonTube-vX.X.X-source.zip` - Full source
-- `dist/NeonTube-vX.X.X-installer.zip` - Installer package
-- `dist/NeonTube-vX.X.X-premium.zip` - Gumroad package
-- `dist/checksums.txt` - SHA256 checksums
-- `dist/RELEASE_NOTES.md` - Release notes template
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+Flare Download is part of the Flare ecosystem - a suite of modern, fire-themed applications.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file
-
-## Support
-
-- **GitHub Issues**: [Report bugs](https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader/issues)
-- **Gumroad**: [Premium Support](https://gumroad.com)
+MIT License
 
 ---
 
-Made with love by Mukund Thiru
+Made by Mukund Thiru

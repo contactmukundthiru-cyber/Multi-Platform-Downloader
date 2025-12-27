@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-NeonTube - A Futuristic Multi-Platform Video Downloader
+Flare Download - Multi-Platform Video Downloader
 Supports YouTube, TikTok, Instagram, Twitter, and 1000+ sites
-Version 2.2 - Multi-Platform Edition
+Part of the Flare ecosystem
 """
 
 import customtkinter as ctk
@@ -27,22 +27,22 @@ ctk.set_default_color_theme("blue")
 
 
 class GlowingFrame(ctk.CTkFrame):
-    """Custom frame with glowing border effect"""
-    def __init__(self, master, glow_color="#00d4ff", **kwargs):
+    """Custom frame with fire glow border effect"""
+    def __init__(self, master, glow_color="#ff4500", **kwargs):
         super().__init__(master, **kwargs)
         self.configure(
-            corner_radius=15,
+            corner_radius=12,
             border_width=2,
             border_color=glow_color
         )
 
 
-class YouTubeDownloader(ctk.CTk):
+class FlareDownloader(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         # Window configuration
-        self.title(f"NeonTube v{__version__} - Video Downloader")
+        self.title(f"Flare Download v{__version__}")
         self.geometry("950x850")
         self.minsize(900, 800)
 
@@ -53,20 +53,34 @@ class YouTubeDownloader(ctk.CTk):
             "Spotify", "Bandcamp", "Bilibili", "Pinterest", "Tumblr"
         ]
 
-        # Colors for futuristic theme
+        # Flare color theme - fire/ember inspired
         self.colors = {
-            "bg_dark": "#0a0a0f",
-            "bg_medium": "#12121a",
-            "bg_light": "#1a1a25",
-            "accent_cyan": "#00d4ff",
-            "accent_purple": "#9945ff",
-            "accent_pink": "#ff00aa",
-            "accent_green": "#00ff88",
+            # Void (backgrounds)
+            "bg_dark": "#0a0a0a",
+            "bg_medium": "#111111",
+            "bg_light": "#1a1a1a",
+            "bg_surface": "#222222",
+            "bg_border": "#2a2a2a",
+            "bg_hover": "#333333",
+            # Fire (accents)
+            "fire_red": "#ff2d2d",
+            "fire_flame": "#ff4500",
+            "fire_orange": "#ff6b35",
+            "fire_tangerine": "#ff8c00",
+            "fire_amber": "#ffa500",
+            "fire_gold": "#ffc107",
+            # Ember
+            "ember_core": "#ff4500",
+            "ember_mid": "#ff6b35",
+            "ember_outer": "#ff8c00",
+            # Text
             "text_primary": "#ffffff",
-            "text_secondary": "#8888aa",
-            "success": "#00ff88",
-            "warning": "#ffaa00",
-            "error": "#ff4455"
+            "text_secondary": "#888888",
+            "text_muted": "#666666",
+            # Status
+            "success": "#4ade80",
+            "warning": "#ffa500",
+            "error": "#ff4444"
         }
 
         self.configure(fg_color=self.colors["bg_dark"])
@@ -129,23 +143,32 @@ class YouTubeDownloader(ctk.CTk):
         title_container = ctk.CTkFrame(header_frame, fg_color="transparent")
         title_container.pack(expand=True, fill="both", padx=30, pady=15)
 
-        # Neon title
+        # Flare title with fire gradient effect
         self.title_label = ctk.CTkLabel(
             title_container,
-            text="NEONTUBE",
-            font=ctk.CTkFont(family="Segoe UI", size=32, weight="bold"),
-            text_color=self.colors["accent_cyan"]
+            text="FLARE",
+            font=ctk.CTkFont(family="Segoe UI", size=36, weight="bold"),
+            text_color=self.colors["fire_flame"]
         )
         self.title_label.pack(side="left")
+
+        # Download text
+        download_label = ctk.CTkLabel(
+            title_container,
+            text="DOWNLOAD",
+            font=ctk.CTkFont(family="Segoe UI", size=36, weight="bold"),
+            text_color=self.colors["fire_orange"]
+        )
+        download_label.pack(side="left", padx=(5, 0))
 
         # Subtitle
         subtitle = ctk.CTkLabel(
             title_container,
             text="  MULTI-PLATFORM VIDEO DOWNLOADER",
-            font=ctk.CTkFont(family="Segoe UI", size=12),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color=self.colors["text_secondary"]
         )
-        subtitle.pack(side="left", padx=10, pady=(12, 0))
+        subtitle.pack(side="left", padx=10, pady=(15, 0))
 
         # Right side buttons
         right_frame = ctk.CTkFrame(title_container, fg_color="transparent")
@@ -158,11 +181,11 @@ class YouTubeDownloader(ctk.CTk):
             command=self.check_for_updates,
             width=100,
             height=28,
-            corner_radius=5,
+            corner_radius=6,
             fg_color="transparent",
             border_width=1,
-            border_color=self.colors["accent_green"],
-            hover_color=self.colors["bg_light"],
+            border_color=self.colors["fire_orange"],
+            hover_color=self.colors["bg_hover"],
             font=ctk.CTkFont(size=10)
         )
         update_btn.pack(side="left", padx=(0, 8))
@@ -172,7 +195,8 @@ class YouTubeDownloader(ctk.CTk):
             right_frame,
             text=f"v{__version__}",
             font=ctk.CTkFont(size=10),
-            fg_color=self.colors["accent_purple"],
+            fg_color=self.colors["fire_flame"],
+            text_color="#000000",
             corner_radius=5,
             padx=8,
             pady=2
@@ -215,7 +239,7 @@ class YouTubeDownloader(ctk.CTk):
             title_row,
             text="VIDEO / PLAYLIST URL",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.colors["accent_cyan"]
+            text_color=self.colors["fire_flame"]
         )
         url_title.pack(side="left")
 
@@ -256,8 +280,8 @@ class YouTubeDownloader(ctk.CTk):
             width=70,
             height=45,
             corner_radius=8,
-            fg_color=self.colors["accent_purple"],
-            hover_color="#7733cc"
+            fg_color=self.colors["fire_orange"],
+            hover_color="#cc5500"
         )
         paste_btn.pack(side="left", padx=(0, 5))
 
@@ -280,7 +304,7 @@ class YouTubeDownloader(ctk.CTk):
             command=self.fetch_video_info,
             fg_color="transparent",
             border_width=1,
-            border_color=self.colors["accent_cyan"],
+            border_color=self.colors["fire_flame"],
             hover_color=self.colors["bg_light"],
             height=32,
             corner_radius=8,
@@ -298,7 +322,7 @@ class YouTubeDownloader(ctk.CTk):
             options_frame,
             text="DOWNLOAD OPTIONS",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.colors["accent_cyan"]
+            text_color=self.colors["fire_flame"]
         )
         options_title.pack(anchor="w", padx=20, pady=(12, 8))
 
@@ -323,8 +347,8 @@ class YouTubeDownloader(ctk.CTk):
             variable=self.type_var,
             font=ctk.CTkFont(size=11),
             corner_radius=8,
-            selected_color=self.colors["accent_cyan"],
-            selected_hover_color="#0099cc",
+            selected_color=self.colors["fire_flame"],
+            selected_hover_color="#cc3700",
             command=self.on_type_change,
             height=35
         )
@@ -348,10 +372,10 @@ class YouTubeDownloader(ctk.CTk):
             font=ctk.CTkFont(size=11),
             corner_radius=8,
             fg_color=self.colors["bg_dark"],
-            button_color=self.colors["accent_cyan"],
-            button_hover_color="#0099cc",
+            button_color=self.colors["fire_flame"],
+            button_hover_color="#cc3700",
             dropdown_fg_color=self.colors["bg_medium"],
-            dropdown_hover_color=self.colors["accent_cyan"],
+            dropdown_hover_color=self.colors["fire_flame"],
             height=35,
             width=120
         )
@@ -376,10 +400,10 @@ class YouTubeDownloader(ctk.CTk):
             font=ctk.CTkFont(size=11),
             corner_radius=8,
             fg_color=self.colors["bg_dark"],
-            button_color=self.colors["accent_purple"],
-            button_hover_color="#7733cc",
+            button_color=self.colors["fire_orange"],
+            button_hover_color="#cc5500",
             dropdown_fg_color=self.colors["bg_medium"],
-            dropdown_hover_color=self.colors["accent_purple"],
+            dropdown_hover_color=self.colors["fire_orange"],
             height=35,
             width=140
         )
@@ -393,10 +417,10 @@ class YouTubeDownloader(ctk.CTk):
             font=ctk.CTkFont(size=11),
             corner_radius=8,
             fg_color=self.colors["bg_dark"],
-            button_color=self.colors["accent_purple"],
-            button_hover_color="#7733cc",
+            button_color=self.colors["fire_orange"],
+            button_hover_color="#cc5500",
             dropdown_fg_color=self.colors["bg_medium"],
-            dropdown_hover_color=self.colors["accent_purple"],
+            dropdown_hover_color=self.colors["fire_orange"],
             height=35,
             width=140
         )
@@ -435,13 +459,13 @@ class YouTubeDownloader(ctk.CTk):
             height=38,
             corner_radius=8,
             fg_color=self.colors["bg_light"],
-            hover_color=self.colors["accent_purple"]
+            hover_color=self.colors["fire_orange"]
         )
         browse_btn.pack(side="right")
 
     def create_advanced_options(self, parent):
         """Create advanced options section"""
-        adv_frame = GlowingFrame(parent, glow_color=self.colors["accent_purple"], fg_color=self.colors["bg_medium"])
+        adv_frame = GlowingFrame(parent, glow_color=self.colors["fire_orange"], fg_color=self.colors["bg_medium"])
         adv_frame.pack(fill="x", pady=(0, 12))
 
         # Collapsible header
@@ -452,7 +476,7 @@ class YouTubeDownloader(ctk.CTk):
             header_frame,
             text="ADVANCED OPTIONS",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.colors["accent_purple"]
+            text_color=self.colors["fire_orange"]
         )
         adv_title.pack(side="left")
 
@@ -470,8 +494,8 @@ class YouTubeDownloader(ctk.CTk):
             text="Download Subtitles (if available)",
             variable=self.download_subtitles,
             font=ctk.CTkFont(size=11),
-            fg_color=self.colors["accent_cyan"],
-            hover_color="#0099cc",
+            fg_color=self.colors["fire_flame"],
+            hover_color="#cc3700",
             corner_radius=4
         )
         self.subtitles_check.pack(side="left", padx=(0, 20))
@@ -482,8 +506,8 @@ class YouTubeDownloader(ctk.CTk):
             text="Download Thumbnail",
             variable=self.download_thumbnail,
             font=ctk.CTkFont(size=11),
-            fg_color=self.colors["accent_cyan"],
-            hover_color="#0099cc",
+            fg_color=self.colors["fire_flame"],
+            hover_color="#cc3700",
             corner_radius=4
         )
         self.thumbnail_check.pack(side="left", padx=(0, 20))
@@ -498,8 +522,8 @@ class YouTubeDownloader(ctk.CTk):
             text="Embed Metadata (title, artist, etc.)",
             variable=self.embed_metadata,
             font=ctk.CTkFont(size=11),
-            fg_color=self.colors["accent_cyan"],
-            hover_color="#0099cc",
+            fg_color=self.colors["fire_flame"],
+            hover_color="#cc3700",
             corner_radius=4
         )
         self.metadata_check.pack(side="left", padx=(0, 20))
@@ -510,8 +534,8 @@ class YouTubeDownloader(ctk.CTk):
             text="Use FFmpeg for merging",
             variable=self.prefer_ffmpeg,
             font=ctk.CTkFont(size=11),
-            fg_color=self.colors["accent_cyan"],
-            hover_color="#0099cc",
+            fg_color=self.colors["fire_flame"],
+            hover_color="#cc3700",
             corner_radius=4
         )
         self.ffmpeg_check.pack(side="left")
@@ -528,10 +552,10 @@ class YouTubeDownloader(ctk.CTk):
             height=55,
             corner_radius=12,
             font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
-            fg_color=self.colors["accent_cyan"],
-            hover_color="#0099cc",
+            fg_color=self.colors["fire_flame"],
+            hover_color="#cc3700",
             border_width=2,
-            border_color=self.colors["accent_cyan"]
+            border_color=self.colors["fire_flame"]
         )
         self.download_btn.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
@@ -570,7 +594,7 @@ class YouTubeDownloader(ctk.CTk):
             status_row,
             text="",
             font=ctk.CTkFont(size=11),
-            text_color=self.colors["accent_green"]
+            text_color=self.colors["fire_gold"]
         )
         self.speed_label.pack(side="right")
 
@@ -579,7 +603,7 @@ class YouTubeDownloader(ctk.CTk):
             self.progress_frame,
             height=10,
             corner_radius=5,
-            progress_color=self.colors["accent_cyan"],
+            progress_color=self.colors["fire_flame"],
             fg_color=self.colors["bg_dark"]
         )
         self.progress_bar.pack(fill="x", padx=20, pady=(0, 5))
@@ -593,7 +617,7 @@ class YouTubeDownloader(ctk.CTk):
             info_row,
             text="0%",
             font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=self.colors["accent_cyan"]
+            text_color=self.colors["fire_flame"]
         )
         self.progress_label.pack(side="left")
 
@@ -618,7 +642,7 @@ class YouTubeDownloader(ctk.CTk):
             title_row,
             text="DOWNLOAD LOG",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.colors["accent_cyan"]
+            text_color=self.colors["fire_flame"]
         )
         log_title.pack(side="left")
 
@@ -657,19 +681,19 @@ class YouTubeDownloader(ctk.CTk):
 
         footer_text = ctk.CTkLabel(
             footer,
-            text=f"NeonTube v{__version__}  |  Supports 1000+ sites  |  Powered by yt-dlp",
+            text=f"Flare Download v{__version__}  |  Part of the Flare ecosystem  |  Powered by yt-dlp",
             font=ctk.CTkFont(size=10),
             text_color=self.colors["text_secondary"]
         )
         footer_text.pack(expand=True)
 
     def animate_glow(self):
-        """Animate the title glow effect"""
-        colors = ["#00d4ff", "#00bbff", "#0099ff", "#00bbff"]
+        """Animate the fire flicker effect"""
+        colors = ["#ff4500", "#ff5500", "#ff6500", "#ff5500"]
         self.glow_index = getattr(self, 'glow_index', 0)
         self.title_label.configure(text_color=colors[self.glow_index % len(colors)])
         self.glow_index += 1
-        self.after(400, self.animate_glow)
+        self.after(300, self.animate_glow)
 
     def on_type_change(self, value):
         """Handle Video/Audio type toggle"""
@@ -997,7 +1021,7 @@ class YouTubeDownloader(ctk.CTk):
             self.progress_bar.configure(progress_color=self.colors["error"])
 
         # Reset progress bar color after 3 seconds
-        self.after(3000, lambda: self.progress_bar.configure(progress_color=self.colors["accent_cyan"]))
+        self.after(3000, lambda: self.progress_bar.configure(progress_color=self.colors["fire_flame"]))
 
     def on_closing(self):
         """Handle window close event"""
@@ -1012,7 +1036,7 @@ class YouTubeDownloader(ctk.CTk):
 
 def main():
     """Main entry point"""
-    app = YouTubeDownloader()
+    app = FlareDownloader()
     app.mainloop()
 
 

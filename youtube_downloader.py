@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Flare Download - Premium Multi-Platform Video Downloader
+FLARE DOWNLOAD
+Premium Multi-Platform Video Downloader
 Part of the Flare ecosystem
+Design: Minimal. Bold. Cinematic.
 """
 
 import customtkinter as ctk
@@ -10,918 +12,542 @@ import threading
 import os
 import re
 import subprocess
-import json
 from datetime import datetime
-from typing import Optional, Callable
-import math
+from typing import Optional
 
-# Version
 try:
     from version import __version__
 except ImportError:
-    __version__ = "2.4.0"
+    __version__ = "2.5.0"
 
-# Configure appearance
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 
-# ============================================================================
-# FLARE DESIGN SYSTEM - Exact colors from Flare website
-# ============================================================================
-class Flare:
-    """Flare Design System - Premium color palette and styling"""
+# =============================================================================
+# FLARE DESIGN TOKENS
+# Minimal. Bold. Cinematic.
+# =============================================================================
+class F:
+    """Design tokens matching flare.mukundthiru.com"""
+    # Pure black
+    BLACK = "#000000"
 
-    # Void - Deep blacks for backgrounds
-    VOID_PURE = "#000000"
-    VOID_DEEP = "#050505"
-    VOID_DARK = "#0a0a0a"
-    VOID_MEDIUM = "#111111"
-    VOID_LIGHT = "#1a1a1a"
-    VOID_SURFACE = "#222222"
-    VOID_BORDER = "#2a2a2a"
-    VOID_HOVER = "#333333"
+    # Surfaces
+    SURFACE = "#0a0a0a"
+    SURFACE_2 = "#111111"
 
-    # Fire - Primary accent colors
-    FIRE_BLOOD = "#8b0000"
-    FIRE_CRIMSON = "#dc143c"
-    FIRE_RED = "#ff2d2d"
-    FIRE_FLAME = "#ff4500"
-    FIRE_ORANGE = "#ff6b35"
-    FIRE_TANGERINE = "#ff8c00"
-    FIRE_AMBER = "#ffa500"
-    FIRE_GOLD = "#ffc107"
-    FIRE_YELLOW = "#ffeb3b"
+    # Borders
+    BORDER = "#1a1a1a"
+    BORDER_HOVER = "#2a2a2a"
 
-    # Ember - Gradient accents
-    EMBER_CORE = "#ff4500"
-    EMBER_MID = "#ff6b35"
-    EMBER_OUTER = "#ff8c00"
+    # Fire orange - THE accent
+    FIRE = "#ff6b35"
+    FIRE_HOVER = "#ff8c00"
 
-    # Text colors
-    TEXT_PRIMARY = "#ffffff"
-    TEXT_SECONDARY = "#a8a8a8"
-    TEXT_MUTED = "#666666"
-    TEXT_DISABLED = "#444444"
+    # Text
+    WHITE = "#ffffff"
+    GRAY = "#666666"
+    GRAY_DARK = "#444444"
 
-    # Status colors
+    # Status
     SUCCESS = "#22c55e"
-    WARNING = "#f59e0b"
     ERROR = "#ef4444"
-    INFO = "#3b82f6"
-
-    # Fonts (fallbacks for cross-platform)
-    FONT_DISPLAY = ("Segoe UI", "Arial", "Helvetica")
-    FONT_MONO = ("Consolas", "Monaco", "Courier New")
-
-    # Sizing
-    RADIUS_SM = 8
-    RADIUS_MD = 12
-    RADIUS_LG = 16
-    RADIUS_XL = 24
 
 
-# ============================================================================
-# CUSTOM WIDGETS - Premium styled components
-# ============================================================================
-class FlareButton(ctk.CTkButton):
-    """Premium button with Flare styling"""
-
-    def __init__(self, master, variant="primary", size="md", **kwargs):
-        # Default styling based on variant
-        styles = {
-            "primary": {
-                "fg_color": Flare.FIRE_FLAME,
-                "hover_color": Flare.FIRE_ORANGE,
-                "text_color": Flare.TEXT_PRIMARY,
-                "border_width": 0,
-            },
-            "secondary": {
-                "fg_color": Flare.VOID_SURFACE,
-                "hover_color": Flare.VOID_HOVER,
-                "text_color": Flare.TEXT_PRIMARY,
-                "border_width": 1,
-                "border_color": Flare.VOID_BORDER,
-            },
-            "ghost": {
-                "fg_color": "transparent",
-                "hover_color": Flare.VOID_HOVER,
-                "text_color": Flare.TEXT_SECONDARY,
-                "border_width": 0,
-            },
-            "danger": {
-                "fg_color": Flare.ERROR,
-                "hover_color": "#dc2626",
-                "text_color": Flare.TEXT_PRIMARY,
-                "border_width": 0,
-            },
-            "outline": {
-                "fg_color": "transparent",
-                "hover_color": Flare.FIRE_FLAME,
-                "text_color": Flare.FIRE_FLAME,
-                "border_width": 2,
-                "border_color": Flare.FIRE_FLAME,
-            },
-        }
-
-        sizes = {
-            "sm": {"height": 32, "corner_radius": Flare.RADIUS_SM, "font_size": 12},
-            "md": {"height": 40, "corner_radius": Flare.RADIUS_MD, "font_size": 13},
-            "lg": {"height": 48, "corner_radius": Flare.RADIUS_MD, "font_size": 14},
-            "xl": {"height": 56, "corner_radius": Flare.RADIUS_LG, "font_size": 16},
-        }
-
-        style = styles.get(variant, styles["primary"])
-        sz = sizes.get(size, sizes["md"])
-
-        # Merge with user kwargs
-        final_kwargs = {
-            **style,
-            "height": sz["height"],
-            "corner_radius": sz["corner_radius"],
-            "font": ctk.CTkFont(size=sz["font_size"], weight="bold"),
-            **kwargs
-        }
-
-        super().__init__(master, **final_kwargs)
-
-
-class FlareInput(ctk.CTkEntry):
-    """Premium input field with Flare styling"""
-
-    def __init__(self, master, size="md", **kwargs):
-        sizes = {
-            "sm": {"height": 36, "font_size": 12},
-            "md": {"height": 44, "font_size": 13},
-            "lg": {"height": 52, "font_size": 14},
-        }
-        sz = sizes.get(size, sizes["md"])
-
-        default_kwargs = {
-            "height": sz["height"],
-            "corner_radius": Flare.RADIUS_MD,
-            "border_width": 1,
-            "border_color": Flare.VOID_BORDER,
-            "fg_color": Flare.VOID_DARK,
-            "text_color": Flare.TEXT_PRIMARY,
-            "placeholder_text_color": Flare.TEXT_MUTED,
-            "font": ctk.CTkFont(size=sz["font_size"]),
-        }
-
-        super().__init__(master, **{**default_kwargs, **kwargs})
-
-        # Focus effects
-        self.bind("<FocusIn>", lambda e: self.configure(border_color=Flare.FIRE_FLAME))
-        self.bind("<FocusOut>", lambda e: self.configure(border_color=Flare.VOID_BORDER))
-
-
-class FlareCard(ctk.CTkFrame):
-    """Premium card component with Flare styling"""
-
-    def __init__(self, master, glow=False, **kwargs):
-        default_kwargs = {
-            "fg_color": Flare.VOID_MEDIUM,
-            "corner_radius": Flare.RADIUS_LG,
-            "border_width": 1,
-            "border_color": Flare.VOID_BORDER,
-        }
-
-        super().__init__(master, **{**default_kwargs, **kwargs})
-
-        if glow:
-            self.configure(border_color=Flare.FIRE_FLAME)
-
-
-class FlareSelect(ctk.CTkOptionMenu):
-    """Premium dropdown with Flare styling"""
-
-    def __init__(self, master, **kwargs):
-        default_kwargs = {
-            "height": 40,
-            "corner_radius": Flare.RADIUS_MD,
-            "fg_color": Flare.VOID_DARK,
-            "button_color": Flare.FIRE_FLAME,
-            "button_hover_color": Flare.FIRE_ORANGE,
-            "dropdown_fg_color": Flare.VOID_MEDIUM,
-            "dropdown_hover_color": Flare.FIRE_FLAME,
-            "dropdown_text_color": Flare.TEXT_PRIMARY,
-            "font": ctk.CTkFont(size=13),
-        }
-
-        super().__init__(master, **{**default_kwargs, **kwargs})
-
-
-# ============================================================================
-# MAIN APPLICATION
-# ============================================================================
-class FlareDownloader(ctk.CTk):
-    """Flare Download - Premium Video Downloader"""
-
+class FlareApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Window setup
-        self.title(f"Flare Download v{__version__}")
-        self.geometry("900x800")
-        self.minsize(800, 700)
-        self.configure(fg_color=Flare.VOID_PURE)
+        self.title("FLARE DOWNLOAD")
+        self.geometry("860x900")
+        self.minsize(760, 800)
+        self.configure(fg_color=F.BLACK)
 
-        # State
         self.is_downloading = False
         self.process: Optional[subprocess.Popen] = None
 
-        # Variables
         self.url_var = ctk.StringVar()
         self.output_dir = ctk.StringVar(value=os.path.expanduser("~/Downloads"))
-        self.media_type = ctk.StringVar(value="video")
         self.format_var = ctk.StringVar(value="mp4")
         self.quality_var = ctk.StringVar(value="Best")
+        self.media_type = ctk.StringVar(value="Video")
 
-        # Options
         self.video_formats = ["mp4", "webm", "mkv"]
-        self.audio_formats = ["mp3", "m4a", "wav", "flac", "opus"]
-        self.video_qualities = ["Best", "4K", "1080p", "720p", "480p", "360p"]
-        self.audio_qualities = ["Best", "320kbps", "256kbps", "192kbps", "128kbps"]
+        self.audio_formats = ["mp3", "m4a", "wav", "flac"]
+        self.video_qualities = ["Best", "4K", "1080p", "720p", "480p"]
+        self.audio_qualities = ["Best", "320k", "256k", "192k", "128k"]
 
-        # Build UI
-        self._create_ui()
-
-        # Window close handler
+        self._build()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-    def _create_ui(self):
-        """Build the premium UI"""
-        # Main container
-        self.main = ctk.CTkFrame(self, fg_color="transparent")
-        self.main.pack(fill="both", expand=True, padx=24, pady=24)
+    def _build(self):
+        # Container
+        container = ctk.CTkFrame(self, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=40, pady=40)
 
-        # Header
-        self._create_header()
+        self._header(container)
+        self._content(container)
+        self._footer(container)
 
-        # Content
-        self._create_content()
+    def _header(self, parent):
+        header = ctk.CTkFrame(parent, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 40))
 
-        # Footer
-        self._create_footer()
-
-    def _create_header(self):
-        """Create premium header"""
-        header = ctk.CTkFrame(self.main, fg_color="transparent", height=80)
-        header.pack(fill="x", pady=(0, 24))
-        header.pack_propagate(False)
-
-        # Logo
-        logo_frame = ctk.CTkFrame(header, fg_color="transparent")
-        logo_frame.pack(side="left", fill="y")
-
-        # Fire icon (using text as fallback)
-        fire_icon = ctk.CTkLabel(
-            logo_frame,
-            text="",
-            font=ctk.CTkFont(size=32),
-            text_color=Flare.FIRE_FLAME
-        )
-        fire_icon.pack(side="left", padx=(0, 12))
-
-        # Title
-        title_frame = ctk.CTkFrame(logo_frame, fg_color="transparent")
-        title_frame.pack(side="left")
-
+        # FLARE title - large, bold
         title = ctk.CTkLabel(
-            title_frame,
+            header,
             text="FLARE",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=Flare.FIRE_FLAME
+            font=ctk.CTkFont(size=42, weight="bold"),
+            text_color=F.WHITE
         )
         title.pack(side="left")
 
-        title2 = ctk.CTkLabel(
-            title_frame,
-            text="DOWNLOAD",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color=Flare.TEXT_PRIMARY
+        # Orange square accent
+        ctk.CTkFrame(header, fg_color=F.FIRE, width=6, height=6, corner_radius=0).pack(
+            side="left", padx=(10, 10), pady=(12, 0)
         )
-        title2.pack(side="left", padx=(8, 0))
 
-        # Subtitle
+        # DOWNLOAD subtitle
         subtitle = ctk.CTkLabel(
-            logo_frame,
-            text="Multi-Platform Video Downloader",
-            font=ctk.CTkFont(size=11),
-            text_color=Flare.TEXT_MUTED
+            header,
+            text="DOWNLOAD",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color=F.GRAY
         )
-        subtitle.pack(side="left", padx=(16, 0), pady=(8, 0))
+        subtitle.pack(side="left", pady=(14, 0))
 
-        # Version badge
-        version = ctk.CTkLabel(
+        # Version
+        ctk.CTkLabel(
             header,
             text=f"v{__version__}",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            fg_color=Flare.VOID_SURFACE,
-            corner_radius=6,
-            text_color=Flare.TEXT_SECONDARY,
-            padx=12,
-            pady=4
-        )
-        version.pack(side="right")
+            font=ctk.CTkFont(family="Consolas", size=9),
+            text_color=F.GRAY_DARK
+        ).pack(side="right", pady=(14, 0))
 
-    def _create_content(self):
-        """Create main content area"""
-        # Scrollable container
-        content = ctk.CTkScrollableFrame(
-            self.main,
-            fg_color="transparent",
-            scrollbar_button_color=Flare.VOID_HOVER,
-            scrollbar_button_hover_color=Flare.FIRE_FLAME
-        )
+    def _content(self, parent):
+        content = ctk.CTkFrame(parent, fg_color="transparent")
         content.pack(fill="both", expand=True)
 
-        # URL Section
-        self._create_url_section(content)
+        self._url_section(content)
+        self._options_section(content)
+        self._output_section(content)
+        self._action_section(content)
+        self._progress_section(content)
+        self._log_section(content)
 
-        # Options Section
-        self._create_options_section(content)
+    def _url_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="x", pady=(0, 28))
 
-        # Action Section
-        self._create_action_section(content)
-
-        # Progress Section
-        self._create_progress_section(content)
-
-        # Log Section
-        self._create_log_section(content)
-
-    def _create_url_section(self, parent):
-        """Create URL input section"""
-        card = FlareCard(parent, glow=True)
-        card.pack(fill="x", pady=(0, 16))
-
-        inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="x", padx=20, pady=20)
-
-        # Label
-        label = ctk.CTkLabel(
-            inner,
+        # Label with tracking
+        ctk.CTkLabel(
+            section,
             text="VIDEO URL",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=Flare.FIRE_FLAME
-        )
-        label.pack(anchor="w", pady=(0, 8))
+            font=ctk.CTkFont(size=9, weight="bold"),
+            text_color=F.GRAY
+        ).pack(anchor="w", pady=(0, 10))
 
-        # Input row
-        input_row = ctk.CTkFrame(inner, fg_color="transparent")
-        input_row.pack(fill="x")
+        # Input with corner accents
+        input_frame = ctk.CTkFrame(section, fg_color="transparent")
+        input_frame.pack(fill="x")
 
-        self.url_entry = FlareInput(
-            input_row,
-            size="lg",
+        # Corner decorations
+        corner_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        corner_frame.pack(fill="x")
+
+        # Entry
+        self.url_entry = ctk.CTkEntry(
+            corner_frame,
             textvariable=self.url_var,
-            placeholder_text="Paste video URL (YouTube, TikTok, Instagram, Twitter...)"
+            placeholder_text="https://...",
+            height=52,
+            corner_radius=0,
+            border_width=1,
+            border_color=F.BORDER,
+            fg_color=F.SURFACE,
+            text_color=F.WHITE,
+            placeholder_text_color=F.GRAY_DARK,
+            font=ctk.CTkFont(size=13)
         )
-        self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 12))
+        self.url_entry.pack(fill="x")
+        self.url_entry.bind("<FocusIn>", lambda e: self.url_entry.configure(border_color=F.FIRE))
+        self.url_entry.bind("<FocusOut>", lambda e: self.url_entry.configure(border_color=F.BORDER))
+
+        # Corner accents (top-left, top-right, bottom-left, bottom-right)
+        corners = ctk.CTkFrame(corner_frame, fg_color="transparent")
+        corners.place(relwidth=1, relheight=1)
+
+        # TL
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=12, height=2, corner_radius=0).place(x=0, y=0)
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=2, height=12, corner_radius=0).place(x=0, y=0)
+        # TR
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=12, height=2, corner_radius=0).place(relx=1, x=-12, y=0)
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=2, height=12, corner_radius=0).place(relx=1, x=-2, y=0)
+        # BL
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=12, height=2, corner_radius=0).place(x=0, rely=1, y=-2)
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=2, height=12, corner_radius=0).place(x=0, rely=1, y=-12)
+        # BR
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=12, height=2, corner_radius=0).place(relx=1, x=-12, rely=1, y=-2)
+        ctk.CTkFrame(corners, fg_color=F.FIRE, width=2, height=12, corner_radius=0).place(relx=1, x=-2, rely=1, y=-12)
 
         # Buttons
-        paste_btn = FlareButton(
-            input_row,
-            text="Paste",
-            variant="secondary",
-            size="lg",
-            width=80,
-            command=self._paste_url
-        )
-        paste_btn.pack(side="left", padx=(0, 8))
+        btns = ctk.CTkFrame(section, fg_color="transparent")
+        btns.pack(fill="x", pady=(12, 0))
 
-        clear_btn = FlareButton(
-            input_row,
-            text="Clear",
-            variant="ghost",
-            size="lg",
-            width=80,
-            command=self._clear_url
-        )
-        clear_btn.pack(side="left")
-
-        # Platforms info
-        platforms = ctk.CTkLabel(
-            inner,
-            text="Supports: YouTube, TikTok, Instagram, Twitter/X, Facebook, Vimeo, Reddit + 1000 more",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_MUTED
-        )
-        platforms.pack(anchor="w", pady=(12, 0))
-
-    def _create_options_section(self, parent):
-        """Create options section"""
-        card = FlareCard(parent)
-        card.pack(fill="x", pady=(0, 16))
-
-        inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="x", padx=20, pady=20)
-
-        # Label
-        label = ctk.CTkLabel(
-            inner,
-            text="DOWNLOAD OPTIONS",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=Flare.FIRE_ORANGE
-        )
-        label.pack(anchor="w", pady=(0, 16))
-
-        # Options grid
-        grid = ctk.CTkFrame(inner, fg_color="transparent")
-        grid.pack(fill="x")
-        grid.columnconfigure((0, 1, 2), weight=1, uniform="col")
-
-        # Media Type
-        type_frame = ctk.CTkFrame(grid, fg_color="transparent")
-        type_frame.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        for text, cmd in [("PASTE", self._paste), ("CLEAR", self._clear)]:
+            ctk.CTkButton(
+                btns, text=text, command=cmd,
+                width=70, height=28, corner_radius=0,
+                fg_color="transparent", hover_color=F.SURFACE,
+                border_width=1, border_color=F.BORDER,
+                text_color=F.GRAY, font=ctk.CTkFont(size=9, weight="bold")
+            ).pack(side="left", padx=(0, 6))
 
         ctk.CTkLabel(
-            type_frame,
-            text="Type",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_SECONDARY
-        ).pack(anchor="w", pady=(0, 4))
+            btns,
+            text="YouTube • TikTok • Instagram • Twitter • 1000+",
+            font=ctk.CTkFont(size=8),
+            text_color=F.GRAY_DARK
+        ).pack(side="right")
 
-        self.type_selector = ctk.CTkSegmentedButton(
-            type_frame,
-            values=["Video", "Audio"],
-            command=self._on_type_change,
-            height=40,
-            corner_radius=Flare.RADIUS_MD,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            fg_color=Flare.VOID_DARK,
-            selected_color=Flare.FIRE_FLAME,
-            selected_hover_color=Flare.FIRE_ORANGE,
-            unselected_color=Flare.VOID_SURFACE,
-            unselected_hover_color=Flare.VOID_HOVER
+    def _options_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="x", pady=(0, 28))
+        section.columnconfigure((0, 1, 2), weight=1, uniform="col")
+
+        # Type
+        type_f = ctk.CTkFrame(section, fg_color="transparent")
+        type_f.grid(row=0, column=0, sticky="ew", padx=(0, 12))
+        ctk.CTkLabel(type_f, text="TYPE", font=ctk.CTkFont(size=9, weight="bold"), text_color=F.GRAY).pack(anchor="w", pady=(0, 6))
+        self.type_seg = ctk.CTkSegmentedButton(
+            type_f, values=["Video", "Audio"], variable=self.media_type,
+            command=self._on_type_change, height=38, corner_radius=0,
+            font=ctk.CTkFont(size=10, weight="bold"),
+            fg_color=F.SURFACE, selected_color=F.FIRE, selected_hover_color=F.FIRE_HOVER,
+            unselected_color=F.SURFACE, unselected_hover_color=F.SURFACE_2,
+            text_color=F.WHITE
         )
-        self.type_selector.set("Video")
-        self.type_selector.pack(fill="x")
+        self.type_seg.pack(fill="x")
 
         # Format
-        format_frame = ctk.CTkFrame(grid, fg_color="transparent")
-        format_frame.grid(row=0, column=1, sticky="ew", padx=8)
-
-        ctk.CTkLabel(
-            format_frame,
-            text="Format",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_SECONDARY
-        ).pack(anchor="w", pady=(0, 4))
-
-        self.format_select = FlareSelect(
-            format_frame,
-            values=self.video_formats,
-            variable=self.format_var
+        fmt_f = ctk.CTkFrame(section, fg_color="transparent")
+        fmt_f.grid(row=0, column=1, sticky="ew", padx=6)
+        ctk.CTkLabel(fmt_f, text="FORMAT", font=ctk.CTkFont(size=9, weight="bold"), text_color=F.GRAY).pack(anchor="w", pady=(0, 6))
+        self.fmt_menu = ctk.CTkOptionMenu(
+            fmt_f, values=self.video_formats, variable=self.format_var,
+            height=38, corner_radius=0, fg_color=F.SURFACE,
+            button_color=F.SURFACE_2, button_hover_color=F.BORDER_HOVER,
+            dropdown_fg_color=F.SURFACE, dropdown_hover_color=F.FIRE,
+            text_color=F.WHITE, font=ctk.CTkFont(size=11)
         )
-        self.format_select.pack(fill="x")
+        self.fmt_menu.pack(fill="x")
 
         # Quality
-        quality_frame = ctk.CTkFrame(grid, fg_color="transparent")
-        quality_frame.grid(row=0, column=2, sticky="ew", padx=(8, 0))
-
-        ctk.CTkLabel(
-            quality_frame,
-            text="Quality",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_SECONDARY
-        ).pack(anchor="w", pady=(0, 4))
-
-        self.quality_select = FlareSelect(
-            quality_frame,
-            values=self.video_qualities,
-            variable=self.quality_var
+        qual_f = ctk.CTkFrame(section, fg_color="transparent")
+        qual_f.grid(row=0, column=2, sticky="ew", padx=(12, 0))
+        ctk.CTkLabel(qual_f, text="QUALITY", font=ctk.CTkFont(size=9, weight="bold"), text_color=F.GRAY).pack(anchor="w", pady=(0, 6))
+        self.qual_menu = ctk.CTkOptionMenu(
+            qual_f, values=self.video_qualities, variable=self.quality_var,
+            height=38, corner_radius=0, fg_color=F.SURFACE,
+            button_color=F.SURFACE_2, button_hover_color=F.BORDER_HOVER,
+            dropdown_fg_color=F.SURFACE, dropdown_hover_color=F.FIRE,
+            text_color=F.WHITE, font=ctk.CTkFont(size=11)
         )
-        self.quality_select.pack(fill="x")
+        self.qual_menu.pack(fill="x")
 
-        # Output path
-        path_frame = ctk.CTkFrame(inner, fg_color="transparent")
-        path_frame.pack(fill="x", pady=(16, 0))
+    def _output_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="x", pady=(0, 28))
 
-        ctk.CTkLabel(
-            path_frame,
-            text="Save to",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_SECONDARY
-        ).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(section, text="SAVE TO", font=ctk.CTkFont(size=9, weight="bold"), text_color=F.GRAY).pack(anchor="w", pady=(0, 6))
 
-        path_row = ctk.CTkFrame(path_frame, fg_color="transparent")
-        path_row.pack(fill="x")
+        row = ctk.CTkFrame(section, fg_color="transparent")
+        row.pack(fill="x")
 
-        self.path_entry = FlareInput(
-            path_row,
-            textvariable=self.output_dir
+        self.path_entry = ctk.CTkEntry(
+            row, textvariable=self.output_dir, height=38, corner_radius=0,
+            border_width=1, border_color=F.BORDER, fg_color=F.SURFACE,
+            text_color=F.WHITE, font=ctk.CTkFont(size=11)
         )
-        self.path_entry.pack(side="left", fill="x", expand=True, padx=(0, 12))
+        self.path_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        browse_btn = FlareButton(
-            path_row,
-            text="Browse",
-            variant="secondary",
-            width=100,
-            command=self._browse_folder
+        ctk.CTkButton(
+            row, text="BROWSE", command=self._browse,
+            width=80, height=38, corner_radius=0,
+            fg_color="transparent", hover_color=F.SURFACE,
+            border_width=1, border_color=F.BORDER,
+            text_color=F.GRAY, font=ctk.CTkFont(size=9, weight="bold")
+        ).pack(side="right")
+
+    def _action_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="x", pady=(0, 28))
+
+        row = ctk.CTkFrame(section, fg_color="transparent")
+        row.pack(fill="x")
+
+        # Download - PRIMARY ACTION
+        self.dl_btn = ctk.CTkButton(
+            row, text="DOWNLOAD", command=self._download,
+            height=52, corner_radius=0,
+            fg_color=F.FIRE, hover_color=F.FIRE_HOVER,
+            text_color=F.BLACK, font=ctk.CTkFont(size=13, weight="bold")
         )
-        browse_btn.pack(side="right")
+        self.dl_btn.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-    def _create_action_section(self, parent):
-        """Create action buttons"""
-        action = ctk.CTkFrame(parent, fg_color="transparent")
-        action.pack(fill="x", pady=(0, 16))
-
-        # Download button
-        self.download_btn = FlareButton(
-            action,
-            text="DOWNLOAD",
-            variant="primary",
-            size="xl",
-            command=self._start_download
-        )
-        self.download_btn.pack(side="left", fill="x", expand=True, padx=(0, 12))
-
-        # Cancel button
-        self.cancel_btn = FlareButton(
-            action,
-            text="Cancel",
-            variant="danger",
-            size="xl",
-            width=100,
-            state="disabled",
-            command=self._cancel_download
+        # Cancel
+        self.cancel_btn = ctk.CTkButton(
+            row, text="CANCEL", command=self._cancel,
+            width=90, height=52, corner_radius=0,
+            fg_color=F.SURFACE, hover_color=F.ERROR,
+            text_color=F.GRAY, state="disabled",
+            font=ctk.CTkFont(size=10, weight="bold")
         )
         self.cancel_btn.pack(side="right")
 
-    def _create_progress_section(self, parent):
-        """Create progress display"""
-        self.progress_card = FlareCard(parent)
-        self.progress_card.pack(fill="x", pady=(0, 16))
+    def _progress_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color=F.SURFACE, corner_radius=0)
+        section.pack(fill="x", pady=(0, 20))
 
-        inner = ctk.CTkFrame(self.progress_card, fg_color="transparent")
-        inner.pack(fill="x", padx=20, pady=20)
+        inner = ctk.CTkFrame(section, fg_color="transparent")
+        inner.pack(fill="x", padx=20, pady=16)
 
-        # Status row
+        # Status
         status_row = ctk.CTkFrame(inner, fg_color="transparent")
-        status_row.pack(fill="x", pady=(0, 12))
+        status_row.pack(fill="x", pady=(0, 10))
 
-        self.status_label = ctk.CTkLabel(
-            status_row,
-            text="Ready",
-            font=ctk.CTkFont(size=13),
-            text_color=Flare.TEXT_SECONDARY
+        self.status_lbl = ctk.CTkLabel(status_row, text="Ready", font=ctk.CTkFont(size=10), text_color=F.GRAY)
+        self.status_lbl.pack(side="left")
+
+        self.speed_lbl = ctk.CTkLabel(status_row, text="", font=ctk.CTkFont(family="Consolas", size=10), text_color=F.FIRE)
+        self.speed_lbl.pack(side="right")
+
+        # Progress bar - thin
+        self.progress = ctk.CTkProgressBar(inner, height=3, corner_radius=0, progress_color=F.FIRE, fg_color=F.BORDER)
+        self.progress.pack(fill="x")
+        self.progress.set(0)
+
+        # Percent
+        self.pct_lbl = ctk.CTkLabel(inner, text="0%", font=ctk.CTkFont(family="Consolas", size=9), text_color=F.GRAY_DARK)
+        self.pct_lbl.pack(anchor="e", pady=(6, 0))
+
+    def _log_section(self, parent):
+        section = ctk.CTkFrame(parent, fg_color="transparent")
+        section.pack(fill="both", expand=True)
+
+        header = ctk.CTkFrame(section, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 6))
+
+        ctk.CTkLabel(header, text="LOG", font=ctk.CTkFont(size=9, weight="bold"), text_color=F.GRAY_DARK).pack(side="left")
+        ctk.CTkButton(
+            header, text="CLEAR", command=self._clear_log,
+            width=50, height=20, corner_radius=0,
+            fg_color="transparent", hover_color=F.SURFACE,
+            text_color=F.GRAY_DARK, font=ctk.CTkFont(size=8)
+        ).pack(side="right")
+
+        self.log = ctk.CTkTextbox(
+            section, height=100, corner_radius=0,
+            fg_color=F.SURFACE, text_color=F.GRAY,
+            font=ctk.CTkFont(family="Consolas", size=9),
+            border_width=1, border_color=F.BORDER
         )
-        self.status_label.pack(side="left")
+        self.log.pack(fill="both", expand=True)
 
-        self.speed_label = ctk.CTkLabel(
-            status_row,
-            text="",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=Flare.FIRE_GOLD
-        )
-        self.speed_label.pack(side="right")
+    def _footer(self, parent):
+        footer = ctk.CTkFrame(parent, fg_color="transparent")
+        footer.pack(fill="x", pady=(20, 0))
 
-        # Progress bar
-        self.progress_bar = ctk.CTkProgressBar(
-            inner,
-            height=8,
-            corner_radius=4,
-            progress_color=Flare.FIRE_FLAME,
-            fg_color=Flare.VOID_DARK
-        )
-        self.progress_bar.pack(fill="x", pady=(0, 8))
-        self.progress_bar.set(0)
-
-        # Info row
-        info_row = ctk.CTkFrame(inner, fg_color="transparent")
-        info_row.pack(fill="x")
-
-        self.percent_label = ctk.CTkLabel(
-            info_row,
-            text="0%",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=Flare.FIRE_FLAME
-        )
-        self.percent_label.pack(side="left")
-
-        self.eta_label = ctk.CTkLabel(
-            info_row,
-            text="",
-            font=ctk.CTkFont(size=11),
-            text_color=Flare.TEXT_MUTED
-        )
-        self.eta_label.pack(side="right")
-
-    def _create_log_section(self, parent):
-        """Create log display"""
-        card = FlareCard(parent)
-        card.pack(fill="both", expand=True)
-
-        inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Header
-        header = ctk.CTkFrame(inner, fg_color="transparent")
-        header.pack(fill="x", pady=(0, 8))
+        # Orange line
+        ctk.CTkFrame(footer, fg_color=F.FIRE, height=1, corner_radius=0).pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
-            header,
-            text="LOG",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=Flare.TEXT_SECONDARY
-        ).pack(side="left")
-
-        clear_btn = FlareButton(
-            header,
-            text="Clear",
-            variant="ghost",
-            size="sm",
-            width=60,
-            command=self._clear_log
-        )
-        clear_btn.pack(side="right")
-
-        # Log text
-        self.log_text = ctk.CTkTextbox(
-            inner,
-            height=120,
-            corner_radius=Flare.RADIUS_MD,
-            fg_color=Flare.VOID_DARK,
-            text_color=Flare.TEXT_SECONDARY,
-            font=ctk.CTkFont(family="Consolas", size=11),
-            border_width=1,
-            border_color=Flare.VOID_BORDER
-        )
-        self.log_text.pack(fill="both", expand=True)
-
-    def _create_footer(self):
-        """Create footer"""
-        footer = ctk.CTkFrame(self.main, fg_color="transparent", height=32)
-        footer.pack(fill="x", pady=(16, 0))
-
-        text = ctk.CTkLabel(
             footer,
-            text="Part of the Flare ecosystem  •  Powered by yt-dlp",
-            font=ctk.CTkFont(size=10),
-            text_color=Flare.TEXT_MUTED
-        )
-        text.pack(expand=True)
+            text="FLARE ECOSYSTEM  •  YT-DLP",
+            font=ctk.CTkFont(size=8),
+            text_color=F.GRAY_DARK
+        ).pack()
 
-    # ========================================================================
-    # EVENT HANDLERS
-    # ========================================================================
-
-    def _paste_url(self):
-        """Paste from clipboard"""
+    # =========================================================================
+    # HANDLERS
+    # =========================================================================
+    def _paste(self):
         try:
-            url = self.clipboard_get()
-            self.url_var.set(url)
-            self._log("URL pasted", "info")
-        except:
-            self._log("Failed to paste from clipboard", "error")
+            self.url_var.set(self.clipboard_get())
+            self._log_msg("URL pasted")
+        except: pass
 
-    def _clear_url(self):
-        """Clear URL"""
+    def _clear(self):
         self.url_var.set("")
 
     def _clear_log(self):
-        """Clear log"""
-        self.log_text.delete("1.0", "end")
+        self.log.delete("1.0", "end")
 
-    def _browse_folder(self):
-        """Browse for output folder"""
+    def _browse(self):
         folder = filedialog.askdirectory(initialdir=self.output_dir.get())
         if folder:
             self.output_dir.set(folder)
-            self._log(f"Output: {folder}", "info")
 
-    def _on_type_change(self, value):
-        """Handle media type change"""
-        if value == "Audio":
-            self.format_select.configure(values=self.audio_formats)
+    def _on_type_change(self, val):
+        if val == "Audio":
+            self.fmt_menu.configure(values=self.audio_formats)
             self.format_var.set("mp3")
-            self.quality_select.configure(values=self.audio_qualities)
+            self.qual_menu.configure(values=self.audio_qualities)
             self.quality_var.set("Best")
         else:
-            self.format_select.configure(values=self.video_formats)
+            self.fmt_menu.configure(values=self.video_formats)
             self.format_var.set("mp4")
-            self.quality_select.configure(values=self.video_qualities)
+            self.qual_menu.configure(values=self.video_qualities)
             self.quality_var.set("Best")
 
-    def _log(self, message: str, level: str = "info"):
-        """Add to log"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        icons = {"info": "•", "success": "✓", "error": "✗", "warning": "!"}
-        icon = icons.get(level, "•")
-        self.log_text.insert("end", f"[{timestamp}] {icon} {message}\n")
-        self.log_text.see("end")
+    def _log_msg(self, msg, ok=True):
+        ts = datetime.now().strftime("%H:%M:%S")
+        icon = "✓" if ok else "✗"
+        self.log.insert("end", f"{ts}  {icon}  {msg}\n")
+        self.log.see("end")
 
-    def _update_progress(self, percent: float, status: str = "", speed: str = "", eta: str = ""):
-        """Update progress UI"""
-        self.progress_bar.set(percent / 100)
-        self.percent_label.configure(text=f"{percent:.0f}%")
-        if status:
-            self.status_label.configure(text=status)
-        if speed:
-            self.speed_label.configure(text=speed)
-        if eta:
-            self.eta_label.configure(text=f"ETA: {eta}")
+    def _update_progress(self, pct, status="", speed=""):
+        self.progress.set(pct / 100)
+        self.pct_lbl.configure(text=f"{pct:.0f}%")
+        if status: self.status_lbl.configure(text=status)
+        self.speed_lbl.configure(text=speed)
 
-    def _set_downloading(self, state: bool):
-        """Set downloading state"""
+    def _set_downloading(self, state):
         self.is_downloading = state
         if state:
-            self.download_btn.configure(state="disabled", text="Downloading...")
-            self.cancel_btn.configure(state="normal")
-            self.progress_bar.configure(progress_color=Flare.FIRE_FLAME)
+            self.dl_btn.configure(state="disabled", fg_color=F.GRAY_DARK, text="DOWNLOADING...")
+            self.cancel_btn.configure(state="normal", text_color=F.WHITE)
         else:
-            self.download_btn.configure(state="normal", text="DOWNLOAD")
-            self.cancel_btn.configure(state="disabled")
+            self.dl_btn.configure(state="normal", fg_color=F.FIRE, text="DOWNLOAD")
+            self.cancel_btn.configure(state="disabled", text_color=F.GRAY)
 
-    # ========================================================================
-    # DOWNLOAD FUNCTIONALITY
-    # ========================================================================
-
-    def _start_download(self):
-        """Start download"""
+    # =========================================================================
+    # DOWNLOAD
+    # =========================================================================
+    def _download(self):
         url = self.url_var.get().strip()
-
         if not url:
-            messagebox.showerror("Error", "Please enter a URL")
+            messagebox.showerror("Error", "Enter a URL")
             return
-
         if not re.match(r'^https?://', url):
-            messagebox.showerror("Error", "Invalid URL - must start with http:// or https://")
+            messagebox.showerror("Error", "Invalid URL")
             return
-
         if not os.path.isdir(self.output_dir.get()):
-            messagebox.showerror("Error", "Output folder does not exist")
+            messagebox.showerror("Error", "Folder doesn't exist")
             return
 
         self._set_downloading(True)
         self._update_progress(0, "Starting...")
-        self._log(f"Starting download: {url[:60]}...", "info")
+        self._log_msg(f"Downloading: {url[:50]}...")
 
-        thread = threading.Thread(target=self._download_thread, args=(url,), daemon=True)
-        thread.start()
+        threading.Thread(target=self._dl_thread, args=(url,), daemon=True).start()
 
-    def _cancel_download(self):
-        """Cancel current download"""
+    def _cancel(self):
         if self.process:
             self.process.terminate()
-            self._log("Download cancelled", "warning")
-            self._download_finished(False, "Cancelled")
+            self._log_msg("Cancelled", False)
+            self._finish(False)
 
-    def _download_thread(self, url: str):
-        """Download in background thread"""
+    def _dl_thread(self, url):
         try:
-            output_dir = self.output_dir.get()
+            out_dir = self.output_dir.get()
             fmt = self.format_var.get()
             quality = self.quality_var.get()
-            is_audio = self.type_selector.get() == "Audio"
+            is_audio = self.media_type.get() == "Audio"
 
-            # Build output template
-            output_template = os.path.join(output_dir, "%(title)s.%(ext)s")
+            template = os.path.join(out_dir, "%(title)s.%(ext)s")
 
-            # Find yt-dlp executable
+            # Find yt-dlp
             if os.name == 'nt':
-                # Windows: check bundled location first
-                install_dir = os.path.dirname(os.path.abspath(__file__))
-                bundled_ytdlp = os.path.join(install_dir, "python", "Scripts", "yt-dlp.exe")
-                ytdlp_cmd = bundled_ytdlp if os.path.exists(bundled_ytdlp) else "yt-dlp"
+                base = os.path.dirname(os.path.abspath(__file__))
+                bundled = os.path.join(base, "python", "Scripts", "yt-dlp.exe")
+                ytdlp = bundled if os.path.exists(bundled) else "yt-dlp"
             else:
-                ytdlp_cmd = "yt-dlp"
+                ytdlp = "yt-dlp"
 
-            # Build yt-dlp command
-            cmd = [
-                ytdlp_cmd,
-                "--newline",
-                "--progress",
-                "--no-warnings",
-                "--no-playlist",
-                "--restrict-filenames",
-            ]
-
-            # Add Node.js path for YouTube support (Windows bundled)
-            if os.name == 'nt':
-                install_dir = os.path.dirname(os.path.abspath(__file__))
-                node_path = os.path.join(install_dir, "node", "node.exe")
-                if os.path.exists(node_path):
-                    cmd.extend(["--extractor-args", f"youtube:player_client=web"])
+            cmd = [ytdlp, "--newline", "--progress", "--no-warnings", "--no-playlist", "--restrict-filenames"]
 
             if is_audio:
-                # Audio extraction
                 cmd.extend(["-x", "--audio-format", fmt])
-
                 if quality != "Best":
-                    bitrate = quality.replace("kbps", "")
-                    cmd.extend(["--audio-quality", f"{bitrate}K"])
-
-                self.after(0, lambda: self._log(f"Audio: {fmt.upper()} @ {quality}", "info"))
+                    br = quality.replace("k", "")
+                    cmd.extend(["--audio-quality", f"{br}K"])
             else:
-                # Video download
                 if quality == "Best":
                     cmd.extend(["-f", "bestvideo+bestaudio/best"])
                 elif quality == "4K":
-                    cmd.extend(["-f", "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best"])
+                    cmd.extend(["-f", "bestvideo[height<=2160]+bestaudio/best"])
                 else:
-                    height = quality.replace("p", "")
-                    cmd.extend(["-f", f"bestvideo[height<={height}]+bestaudio/best[height<={height}]/best"])
-
+                    h = quality.replace("p", "")
+                    cmd.extend(["-f", f"bestvideo[height<={h}]+bestaudio/best"])
                 cmd.extend(["--merge-output-format", fmt])
-                self.after(0, lambda: self._log(f"Video: {fmt.upper()} @ {quality}", "info"))
 
-            cmd.extend(["-o", output_template, url])
+            cmd.extend(["-o", template, url])
 
-            # Set up environment with bundled tools
+            # Env with bundled tools
             env = os.environ.copy()
             if os.name == 'nt':
-                install_dir = os.path.dirname(os.path.abspath(__file__))
-                extra_paths = [
-                    os.path.join(install_dir, "python"),
-                    os.path.join(install_dir, "python", "Scripts"),
-                    os.path.join(install_dir, "ffmpeg"),
-                    os.path.join(install_dir, "node"),
+                base = os.path.dirname(os.path.abspath(__file__))
+                paths = [
+                    os.path.join(base, "python"),
+                    os.path.join(base, "python", "Scripts"),
+                    os.path.join(base, "ffmpeg"),
+                    os.path.join(base, "node"),
                 ]
-                existing_path = env.get("PATH", "")
-                env["PATH"] = ";".join(extra_paths) + ";" + existing_path
+                env["PATH"] = ";".join(paths) + ";" + env.get("PATH", "")
 
-            # Run yt-dlp
             self.process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                bufsize=1,
-                env=env,
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                universal_newlines=True, bufsize=1, env=env,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
 
-            # Parse output
             for line in self.process.stdout:
                 line = line.strip()
-                if not line:
-                    continue
+                if not line: continue
 
-                # Parse progress
-                progress = re.search(r'(\d+\.?\d*)%', line)
-                speed = re.search(r'at\s+([\d.]+\s*\w+/s)', line)
-                eta = re.search(r'ETA\s+([\d:]+)', line)
+                m = re.search(r'(\d+\.?\d*)%', line)
+                s = re.search(r'at\s+([\d.]+\s*\w+/s)', line)
 
-                if progress:
-                    pct = float(progress.group(1))
-                    spd = speed.group(1) if speed else ""
-                    et = eta.group(1) if eta else ""
-                    self.after(0, lambda p=pct, s=spd, e=et: self._update_progress(p, "Downloading...", s, e))
-
-                # Log important lines
-                if any(x in line.lower() for x in ["destination:", "downloading", "merging", "deleting"]):
-                    short = line[:70] + "..." if len(line) > 70 else line
-                    self.after(0, lambda l=short: self._log(l, "info"))
+                if m:
+                    pct = float(m.group(1))
+                    spd = s.group(1) if s else ""
+                    self.after(0, lambda p=pct, sp=spd: self._update_progress(p, "Downloading...", sp))
 
             self.process.wait()
-
-            success = self.process.returncode == 0
-            self.after(0, lambda: self._download_finished(success))
+            self.after(0, lambda: self._finish(self.process.returncode == 0))
 
         except FileNotFoundError:
-            self.after(0, lambda: self._download_finished(False, "yt-dlp not found"))
+            self.after(0, lambda: self._finish(False, "yt-dlp not found"))
         except Exception as e:
-            self.after(0, lambda: self._download_finished(False, str(e)[:50]))
+            self.after(0, lambda: self._finish(False, str(e)[:40]))
         finally:
             self.process = None
 
-    def _download_finished(self, success: bool, error: str = None):
-        """Handle download completion"""
+    def _finish(self, success, error=None):
         self._set_downloading(False)
-
         if success:
-            self._update_progress(100, "Complete!", "", "")
-            self._log("Download completed!", "success")
-            self.progress_bar.configure(progress_color=Flare.SUCCESS)
+            self._update_progress(100, "Complete", "")
+            self._log_msg("Download complete")
+            self.progress.configure(progress_color=F.SUCCESS)
         else:
-            self._update_progress(0, "Failed", "", "")
-            self._log(f"Failed: {error or 'Unknown error'}", "error")
-            self.progress_bar.configure(progress_color=Flare.ERROR)
-
-        # Reset color after delay
-        self.after(3000, lambda: self.progress_bar.configure(progress_color=Flare.FIRE_FLAME))
+            self._update_progress(0, "Failed", "")
+            self._log_msg(error or "Failed", False)
+            self.progress.configure(progress_color=F.ERROR)
+        self.after(2000, lambda: self.progress.configure(progress_color=F.FIRE))
 
     def _on_close(self):
-        """Handle window close"""
         if self.is_downloading:
-            if messagebox.askyesno("Confirm", "Download in progress. Cancel and exit?"):
-                if self.process:
-                    self.process.terminate()
+            if messagebox.askyesno("Confirm", "Cancel and exit?"):
+                if self.process: self.process.terminate()
                 self.destroy()
         else:
             self.destroy()
 
 
-# ============================================================================
-# MAIN
-# ============================================================================
-
 def main():
-    app = FlareDownloader()
+    app = FlareApp()
     app.mainloop()
 
 

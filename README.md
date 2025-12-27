@@ -2,7 +2,7 @@
 
 Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram, Twitter, and 1000+ other sites.
 
-![Version](https://img.shields.io/badge/version-2.4.0-ff4500)
+![Version](https://img.shields.io/badge/version-2.5.0-ff4500)
 ![Python](https://img.shields.io/badge/python-3.8+-ff6b35)
 ![License](https://img.shields.io/badge/license-MIT-ff8c00)
 

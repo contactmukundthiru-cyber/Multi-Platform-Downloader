@@ -16,7 +16,7 @@
 ; ============================================================================
 
 #define MyAppName "Flare Download"
-#define MyAppVersion "2.7.0"
+#define MyAppVersion "2.7.1"
 #define MyAppPublisher "Mukund Thiru"
 #define MyAppURL "https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader"
 #define MyAppExeName "Flare Download.exe"
@@ -114,7 +114,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\App Paths\{#MyApp
 [Code]
 // Custom code for cleanup and initialization
 
-procedure CleanupOldVersions();
+procedure CleanupOldInstallDirs();
 var
   OldPaths: array[0..5] of String;
   DesktopPath: String;
@@ -131,9 +131,7 @@ begin
   for i := 0 to 5 do
   begin
     if DirExists(OldPaths[i]) then
-    begin
       DelTree(OldPaths[i], True, True, True);
-    end;
   end;
 
   // Clean old desktop shortcuts
@@ -141,25 +139,32 @@ begin
   DeleteFile(DesktopPath + '\NeonTube.lnk');
   DeleteFile(DesktopPath + '\FlareDownload.lnk');
   DeleteFile(DesktopPath + '\YouTube Downloader.lnk');
+end;
 
-  // Clean old start menu entries
-  DelTree(ExpandConstant('{group}\..\NeonTube'), True, True, True);
-  DelTree(ExpandConstant('{group}\..\FlareDownload'), True, True, True);
+procedure CleanupOldStartMenu();
+var
+  StartMenuPath: String;
+begin
+  // Clean old start menu entries - only call after setup has started
+  StartMenuPath := ExpandConstant('{userprograms}');
+  DelTree(StartMenuPath + '\NeonTube', True, True, True);
+  DelTree(StartMenuPath + '\FlareDownload', True, True, True);
+  DelTree(StartMenuPath + '\YouTube Downloader', True, True, True);
 end;
 
 function InitializeSetup(): Boolean;
 begin
   Result := True;
-  // Cleanup runs before installation
-  CleanupOldVersions();
+  // Only clean install dirs at init (not start menu - {group} not available yet)
+  CleanupOldInstallDirs();
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    // Post-install: ensure old versions are cleaned
-    CleanupOldVersions();
+    // Post-install: clean start menu (now {group} and paths are available)
+    CleanupOldStartMenu();
   end;
 end;
 

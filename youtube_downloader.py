@@ -71,9 +71,17 @@ from datetime import datetime
 from typing import Optional, List
 
 try:
-    from version import __version__
+    from version import __version__, GITHUB_REPO
 except ImportError:
     __version__ = "2.6.0"
+    GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
+
+# Import updater
+try:
+    from updater import Updater
+    HAS_UPDATER = True
+except ImportError:
+    HAS_UPDATER = False
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -846,7 +854,7 @@ class FlareDownloadApp(ctk.CTk):
         self._log("Flare Download initialized. Ready.")
 
     def _build_footer(self, parent):
-        """Footer with branding."""
+        """Footer with branding and update check."""
         footer = ctk.CTkFrame(parent, fg_color="transparent")
         footer.pack(fill="x", pady=(20, 0))
 
@@ -856,13 +864,87 @@ class FlareDownloadApp(ctk.CTk):
             height=2, corner_radius=0
         ).pack(fill="x", pady=(0, 12))
 
+        # Footer row
+        footer_row = ctk.CTkFrame(footer, fg_color="transparent")
+        footer_row.pack(fill="x")
+
         # Credits
         ctk.CTkLabel(
-            footer,
+            footer_row,
             text="FLARE ECOSYSTEM  •  Powered by yt-dlp  •  Made by Mukund Thiru",
             font=ctk.CTkFont(size=10),
             text_color=Flare.GRAY_DIM
-        ).pack()
+        ).pack(side="left")
+
+        # Update check button
+        self.update_label = ctk.CTkLabel(
+            footer_row,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color=Flare.FIRE
+        )
+        self.update_label.pack(side="right", padx=(10, 0))
+
+        ctk.CTkButton(
+            footer_row,
+            text="Check Updates",
+            command=self._check_updates,
+            width=100, height=24,
+            corner_radius=0,
+            fg_color="transparent",
+            hover_color=Flare.SURFACE_2,
+            border_width=1,
+            border_color=Flare.BORDER,
+            text_color=Flare.GRAY,
+            font=ctk.CTkFont(size=9)
+        ).pack(side="right")
+
+        # Auto-check for updates on startup (in background)
+        self.after(2000, self._check_updates_silent)
+
+    # =========================================================================
+    # UPDATE CHECKING
+    # =========================================================================
+    def _check_updates(self):
+        """Check for updates and show result."""
+        if not HAS_UPDATER:
+            self._log("Updater not available", error=True)
+            return
+
+        self._log("Checking for updates...")
+        self.update_label.configure(text="Checking...")
+
+        def on_result(has_update, version, notes):
+            if has_update:
+                self.update_label.configure(text=f"v{version} available!")
+                self._log(f"Update available: v{version}")
+                if messagebox.askyesno(
+                    "Update Available",
+                    f"A new version (v{version}) is available!\n\n"
+                    f"Current: v{__version__}\n"
+                    f"Latest: v{version}\n\n"
+                    "Would you like to open the download page?"
+                ):
+                    import webbrowser
+                    webbrowser.open(f"https://github.com/{GITHUB_REPO}/releases/latest")
+            else:
+                self.update_label.configure(text="Up to date")
+                self._log("You have the latest version")
+
+        updater = Updater()
+        updater.check_async(on_result)
+
+    def _check_updates_silent(self):
+        """Check for updates silently on startup."""
+        if not HAS_UPDATER:
+            return
+
+        def on_result(has_update, version, notes):
+            if has_update:
+                self.update_label.configure(text=f"v{version} available!")
+
+        updater = Updater()
+        updater.check_async(on_result)
 
     # =========================================================================
     # ACTIONS

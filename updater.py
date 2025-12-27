@@ -19,7 +19,7 @@ from typing import Optional, Tuple, Callable
 try:
     from version import __version__, GITHUB_API_URL, GITHUB_REPO, GITHUB_RAW_URL
 except ImportError:
-    __version__ = "2.8.2"
+    __version__ = "2.8.3"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
     GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     GITHUB_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main"

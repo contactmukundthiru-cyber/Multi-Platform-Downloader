@@ -2,7 +2,7 @@
 
 Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram, Twitter, and 1000+ other sites.
 
-![Version](https://img.shields.io/badge/version-2.8.2-ff4500)
+![Version](https://img.shields.io/badge/version-2.8.3-ff4500)
 ![Python](https://img.shields.io/badge/python-3.8+-ff6b35)
 ![License](https://img.shields.io/badge/license-MIT-ff8c00)
 ![Build](https://img.shields.io/github/actions/workflow/status/contactmukundthiru-cyber/Multi-Platform-Downloader/build.yml?label=build)
@@ -15,7 +15,7 @@ Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram
 
 **Option 1: Windows Installer (Recommended)**
 1. Go to [Releases](https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader/releases)
-2. Download `FlareDownload_Setup_2.8.2.exe`
+2. Download `FlareDownload_Setup_2.8.3.exe`
 3. Run the installer
 4. Done! Find "Flare Download" in your Start Menu and Desktop
 
@@ -118,7 +118,7 @@ This will:
 1. Install PyInstaller and Python dependencies
 2. Download and install Inno Setup (if not found)
 3. Build `dist\Flare Download.exe` (standalone executable)
-4. Create `installer_output\FlareDownload_Setup_2.8.2.exe` (installer)
+4. Create `installer_output\FlareDownload_Setup_2.8.3.exe` (installer)
 
 ### Manual Build
 

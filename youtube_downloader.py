@@ -18,6 +18,10 @@ def check_dependencies():
         import customtkinter
     except ImportError:
         errors.append("customtkinter not installed - run: pip install customtkinter")
+    try:
+        import yt_dlp
+    except ImportError:
+        errors.append("yt-dlp not installed - run: pip install yt-dlp")
     if errors:
         print("Missing dependencies:")
         for e in errors:
@@ -32,11 +36,12 @@ import threading
 import subprocess
 import math
 from typing import Optional
+import yt_dlp
 
 try:
     from version import __version__, GITHUB_REPO
 except ImportError:
-    __version__ = "2.8.2"
+    __version__ = "2.8.3"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
 
 try:
@@ -78,7 +83,6 @@ class FlareDownloadApp(ctk.CTk):
 
         # State
         self.is_downloading = False
-        self.process: Optional[subprocess.Popen] = None
         self._glow_phase = 0
 
         # Variables
@@ -447,12 +451,46 @@ class FlareDownloadApp(ctk.CTk):
         threading.Thread(target=self._download_thread, args=(url,), daemon=True).start()
 
     def _cancel_download(self):
-        if self.process:
-            self.process.terminate()
         self.is_downloading = False
         self.download_btn.configure(text="DOWNLOAD", fg_color=Colors.FIRE, hover_color=Colors.FIRE_GLOW)
         self.status_label.configure(text="Cancelled")
         self._log("Download cancelled")
+
+    def _progress_hook(self, d):
+        """yt-dlp progress callback."""
+        if not self.is_downloading:
+            raise yt_dlp.utils.DownloadCancelled("Cancelled by user")
+
+        if d['status'] == 'downloading':
+            # Get percentage
+            if 'total_bytes' in d and d['total_bytes']:
+                pct = (d.get('downloaded_bytes', 0) / d['total_bytes']) * 100
+            elif 'total_bytes_estimate' in d and d['total_bytes_estimate']:
+                pct = (d.get('downloaded_bytes', 0) / d['total_bytes_estimate']) * 100
+            elif '_percent_str' in d:
+                try:
+                    pct = float(d['_percent_str'].replace('%', '').strip())
+                except:
+                    pct = 0
+            else:
+                pct = 0
+
+            # Update UI
+            self.after(0, lambda p=pct: self.progress_bar.set(p / 100))
+
+            # Status text
+            speed = d.get('_speed_str', '')
+            eta = d.get('_eta_str', '')
+            status = f"Downloading: {pct:.1f}%"
+            if speed:
+                status += f" • {speed}"
+            if eta:
+                status += f" • ETA: {eta}"
+            self.after(0, lambda s=status: self.status_label.configure(text=s[:55]))
+
+        elif d['status'] == 'finished':
+            self.after(0, lambda: self.status_label.configure(text="Processing..."))
+            self.after(0, lambda: self._log("Download finished, processing..."))
 
     def _download_thread(self, url):
         output_dir = self.output_dir.get()
@@ -460,88 +498,78 @@ class FlareDownloadApp(ctk.CTk):
         quality = self.quality_var.get()
         is_audio = self.media_type.get() == "Audio"
 
-        # Base command with reliability options
-        cmd = [
-            "yt-dlp",
-            "--no-playlist",
-            "--newline",  # Better progress parsing
-            "--no-warnings",
-            "--socket-timeout", "30",
-            "--retries", "3",
-            "--fragment-retries", "3",
-            "-o", f"{output_dir}/%(title)s.%(ext)s"
-        ]
+        self._log(f"Starting download: {url[:70]}...")
+
+        # Build yt-dlp options
+        ydl_opts = {
+            'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
+            'noplaylist': True,
+            'socket_timeout': 30,
+            'retries': 5,
+            'fragment_retries': 5,
+            'progress_hooks': [self._progress_hook],
+            'quiet': True,
+            'no_warnings': True,
+        }
 
         if is_audio:
             # Audio extraction
-            cmd.extend(["-x", "--audio-format", fmt])
-            # Audio quality: 0=best, 9=worst for VBR
-            if quality == "Best":
-                cmd.extend(["--audio-quality", "0"])
-            elif quality == "320k":
-                cmd.extend(["--audio-quality", "0"])
-            elif quality == "256k":
-                cmd.extend(["--audio-quality", "2"])
-            elif quality == "192k":
-                cmd.extend(["--audio-quality", "4"])
-            elif quality == "128k":
-                cmd.extend(["--audio-quality", "6"])
-            else:
-                cmd.extend(["--audio-quality", "5"])
+            ydl_opts['format'] = 'bestaudio/best'
+            ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': fmt,
+            }]
+            # Quality mapping (0=best, 9=worst)
+            quality_map = {'Best': 0, '320k': 0, '256k': 2, '192k': 4, '128k': 6}
+            ydl_opts['postprocessor_args'] = {
+                'extractaudio': ['-q:a', str(quality_map.get(quality, 5))]
+            }
         else:
-            # Video format - use flexible fallback chain
+            # Video format selection - simple and reliable
             if quality == "Best":
-                # Best quality with fallbacks
-                cmd.extend(["-f", "bv*+ba/b"])
+                ydl_opts['format'] = 'bestvideo+bestaudio/best'
             else:
                 height = quality.replace("p", "")
-                # Flexible format: try height limit, fall back to best available
-                cmd.extend(["-f", f"bv*[height<={height}]+ba/b[height<={height}]/bv*+ba/b"])
+                # Try specific height, fallback to best
+                ydl_opts['format'] = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/bestvideo+bestaudio/best'
 
-            # Only set merge format for formats that need it
-            if fmt in ["mp4", "mkv", "webm"]:
-                cmd.extend(["--merge-output-format", fmt])
-            elif fmt == "mov":
-                cmd.extend(["--merge-output-format", "mp4", "--recode-video", "mov"])
-            elif fmt == "avi":
-                cmd.extend(["--merge-output-format", "mp4", "--recode-video", "avi"])
-
-        cmd.append(url)
-        self._log(f"Downloading: {url[:60]}...")
+            # Output format
+            if fmt in ['mp4', 'mkv', 'webm']:
+                ydl_opts['merge_output_format'] = fmt
+            elif fmt in ['mov', 'avi']:
+                ydl_opts['merge_output_format'] = 'mp4'
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': fmt,
+                }]
 
         try:
-            creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0) if sys.platform == 'win32' else 0
-            self.process = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                creationflags=creationflags
-            )
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                self.after(0, lambda: self._log("Fetching video info..."))
+                info = ydl.extract_info(url, download=True)
+                title = info.get('title', 'Unknown')
+                self.after(0, lambda t=title: self._log(f"Downloaded: {t}"))
 
-            for line in self.process.stdout:
-                if not self.is_downloading:
-                    break
-                line = line.strip()
-                if line:
-                    # Parse progress
-                    if "[download]" in line and "%" in line:
-                        try:
-                            pct = float(line.split("%")[0].split()[-1])
-                            self.after(0, lambda p=pct: self.progress_bar.set(p / 100))
-                            self.after(0, lambda l=line: self.status_label.configure(text=l[:55]))
-                        except:
-                            pass
-                    elif "[Merger]" in line or "[ExtractAudio]" in line:
-                        self.after(0, lambda: self.status_label.configure(text="Processing..."))
-                    self.after(0, lambda l=line: self._log(l))
+            self.after(0, lambda: self._download_complete(True))
 
-            self.process.wait()
-
-            if self.process.returncode == 0:
-                self.after(0, lambda: self._download_complete(True))
+        except yt_dlp.utils.DownloadCancelled:
+            self.after(0, lambda: self._log("Download cancelled"))
+        except yt_dlp.utils.DownloadError as e:
+            error_msg = str(e)
+            # Clean up error message
+            if "Video unavailable" in error_msg:
+                error_msg = "Video unavailable or private"
+            elif "Sign in" in error_msg:
+                error_msg = "Video requires sign-in (age-restricted or private)"
+            elif "HTTP Error 403" in error_msg:
+                error_msg = "Access forbidden - video may be region-locked"
+            elif "HTTP Error 404" in error_msg:
+                error_msg = "Video not found"
             else:
-                self.after(0, lambda: self._download_complete(False, "Download failed - check log"))
-
+                error_msg = error_msg[:100]
+            self.after(0, lambda e=error_msg: self._download_complete(False, e))
         except Exception as e:
-            self.after(0, lambda: self._download_complete(False, str(e)))
+            self.after(0, lambda e=str(e)[:100]: self._download_complete(False, e))
 
     def _download_complete(self, success, error=None):
         self.is_downloading = False
@@ -557,8 +585,7 @@ class FlareDownloadApp(ctk.CTk):
             self._log(f"Error: {error}", error=True)
 
     def _on_close(self):
-        if self.process:
-            self.process.terminate()
+        self.is_downloading = False
         self.destroy()
 
 

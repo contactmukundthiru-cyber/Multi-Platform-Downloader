@@ -3,7 +3,7 @@ Flare Download - Version Information
 Part of the Flare ecosystem
 """
 
-__version__ = "2.6.0"
+__version__ = "2.6.1"
 __app_name__ = "Flare Download"
 __author__ = "Mukund Thiru"
 __description__ = "Multi-Platform Video Downloader - Part of Flare"

@@ -2,7 +2,7 @@
 
 Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram, Twitter, and 1000+ other sites.
 
-![Version](https://img.shields.io/badge/version-2.6.1-ff4500)
+![Version](https://img.shields.io/badge/version-2.8.1-ff4500)
 ![Python](https://img.shields.io/badge/python-3.8+-ff6b35)
 ![License](https://img.shields.io/badge/license-MIT-ff8c00)
 ![Build](https://img.shields.io/github/actions/workflow/status/contactmukundthiru-cyber/Multi-Platform-Downloader/build.yml?label=build)
@@ -15,7 +15,7 @@ Part of the **Flare ecosystem**. Download videos from YouTube, TikTok, Instagram
 
 **Option 1: Windows Installer (Recommended)**
 1. Go to [Releases](https://github.com/contactmukundthiru-cyber/Multi-Platform-Downloader/releases)
-2. Download `FlareDownload_Setup_2.6.1.exe`
+2. Download `FlareDownload_Setup_2.8.1.exe`
 3. Run the installer
 4. Done! Find "Flare Download" in your Start Menu and Desktop
 
@@ -67,13 +67,13 @@ Or download and run `install.sh` directly.
 ## Features
 
 - **Multi-Platform**: Download from 1000+ websites
-- **Cinematic UI**: Premium dark theme with animated ember effects
+- **Cinematic UI**: Clean dark theme with subtle animations
 - **Auto-Updates**: Checks GitHub for new versions automatically
 - **Video Formats**: MP4, WebM, MKV, MOV, AVI
 - **Audio Formats**: MP3, M4A, WAV, FLAC, Opus, AAC
 - **Quality Options**: 4K, 1080p, 720p, 480p, 360p
 - **Audio Bitrates**: 320k, 256k, 192k, 128k, 96k
-- **Progress Ring**: Circular animated progress indicator
+- **Progress Bar**: Clean animated progress indicator
 - **Clean Uninstall**: Removes all files and shortcuts
 
 ## How to Use
@@ -118,7 +118,7 @@ This will:
 1. Install PyInstaller and Python dependencies
 2. Download and install Inno Setup (if not found)
 3. Build `dist\Flare Download.exe` (standalone executable)
-4. Create `installer_output\FlareDownload_Setup_2.6.1.exe` (installer)
+4. Create `installer_output\FlareDownload_Setup_2.8.1.exe` (installer)
 
 ### Manual Build
 
@@ -149,12 +149,12 @@ The repository includes automated builds via GitHub Actions:
 # 1. Update version in version.py and installer.iss
 # 2. Commit and push
 git add .
-git commit -m "Release v2.7.0"
+git commit -m "Release v2.9.0"
 git push
 
 # 3. Create and push tag
-git tag v2.7.0
-git push origin v2.7.0
+git tag v2.9.0
+git push origin v2.9.0
 ```
 
 GitHub Actions will automatically build and attach the installer to the release.

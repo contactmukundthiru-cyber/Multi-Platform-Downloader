@@ -36,7 +36,7 @@ from typing import Optional
 try:
     from version import __version__, GITHUB_REPO
 except ImportError:
-    __version__ = "2.8.0"
+    __version__ = "2.8.1"
     GITHUB_REPO = "contactmukundthiru-cyber/Multi-Platform-Downloader"
 
 try:
@@ -396,7 +396,7 @@ class FlareDownloadApp(ctk.CTk):
                 result = subprocess.run(
                     ['powershell', '-command', 'Get-Clipboard'],
                     capture_output=True, text=True, timeout=3,
-                    creationflags=subprocess.CREATE_NO_WINDOW
+                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)
                 )
                 if result.returncode == 0 and result.stdout.strip():
                     self.url_var.set(result.stdout.strip())

@@ -234,7 +234,7 @@ echo    1. Standalone executable:
 echo       dist\Flare Download.exe
 echo.
 echo    2. Windows installer:
-echo       installer_output\FlareDownload_Setup_2.8.0.exe
+echo       installer_output\FlareDownload_Setup_2.8.1.exe
 echo.
 echo    ----------------------------------------
 echo    Distribution:

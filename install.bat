@@ -17,12 +17,33 @@ set "INSTALL_DIR=%LOCALAPPDATA%\FlareDownload"
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "STARTMENU=%APPDATA%\Microsoft\Windows\Start Menu\Programs"
 
-:: Clean up old installation if exists (fresh start)
+:: ============================================================================
+:: CLEANUP - Remove ALL old installations and shortcuts
+:: ============================================================================
+
+:: Remove old installation folder
 if exist "%INSTALL_DIR%" (
-    echo    Removing old installation for clean update...
+    echo    Removing old installation...
     rmdir /s /q "%INSTALL_DIR%" 2>nul
-    ping -n 3 127.0.0.1 >nul
 )
+
+:: Remove old desktop shortcuts (all possible names)
+if exist "%DESKTOP%\Flare Download.lnk" del /f /q "%DESKTOP%\Flare Download.lnk" 2>nul
+if exist "%DESKTOP%\FlareDownload.lnk" del /f /q "%DESKTOP%\FlareDownload.lnk" 2>nul
+if exist "%DESKTOP%\NeonTube.lnk" del /f /q "%DESKTOP%\NeonTube.lnk" 2>nul
+if exist "%DESKTOP%\YouTube Downloader.lnk" del /f /q "%DESKTOP%\YouTube Downloader.lnk" 2>nul
+
+:: Remove old Start Menu shortcuts
+if exist "%STARTMENU%\Flare Download.lnk" del /f /q "%STARTMENU%\Flare Download.lnk" 2>nul
+if exist "%STARTMENU%\FlareDownload.lnk" del /f /q "%STARTMENU%\FlareDownload.lnk" 2>nul
+if exist "%STARTMENU%\NeonTube.lnk" del /f /q "%STARTMENU%\NeonTube.lnk" 2>nul
+
+:: Remove old installation folders (different names from previous versions)
+if exist "%LOCALAPPDATA%\NeonTube" rmdir /s /q "%LOCALAPPDATA%\NeonTube" 2>nul
+if exist "%LOCALAPPDATA%\YouTubeDownloader" rmdir /s /q "%LOCALAPPDATA%\YouTubeDownloader" 2>nul
+
+:: Wait a moment
+ping -n 2 127.0.0.1 >nul
 
 :: Create fresh install directory
 mkdir "%INSTALL_DIR%"
